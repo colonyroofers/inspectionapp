@@ -39,6 +39,17 @@
   .btn-row .btn{flex:1}
   .step{display:none}
   .step.active{display:block}
+
+  /* Inspection Type Selection */
+  .type-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+  .type-card{position:relative;background:white;border-radius:12px;padding:20px 20px 20px 62px;border:2px solid #EAECF0;cursor:pointer;transition:all .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .type-card:hover{border-color:#1B2A4A;box-shadow:0 4px 12px rgba(27,42,74,.12)}
+  .type-card.selected{border-color:#1B2A4A;background:#F0F2F6;box-shadow:0 4px 12px rgba(27,42,74,.15)}
+  .type-card.selected::after{content:'✓';position:absolute;top:12px;right:14px;width:26px;height:26px;border-radius:50%;background:#1B2A4A;color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:26px;text-align:center}
+  .type-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .type-card h4{font-size:16px;font-weight:700;color:#1B2A4A;margin-bottom:3px}
+  .type-card p{font-size:13px;color:#667085;line-height:1.4;margin:0}
+
   /* Buildings */
   .bldg-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
   .bldg-tab{padding:10px 16px;border-radius:8px;border:1px solid #D0D5DD;background:white;color:#344054;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;min-width:80px;font-family:inherit}
@@ -65,6 +76,7 @@
   .rank-row:last-child{border-bottom:none}
   .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700}
   .success-box{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 16px;font-size:13px;color:#166534;line-height:1.6;margin-top:12px}
+  .type-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -75,13 +87,39 @@
   </div>
 
   <div class="tabs" id="tabBar">
-    <div class="tab active" onclick="goStep(0)">Property</div>
-    <div class="tab" onclick="goStep(1)">Buildings</div>
-    <div class="tab" onclick="goStep(2)">Notes</div>
+    <div class="tab active" onclick="goStep(0)">Type</div>
+    <div class="tab" onclick="goStep(1)">Property</div>
+    <div class="tab" onclick="goStep(2)">Buildings</div>
+    <div class="tab" onclick="goStep(3)">Notes</div>
   </div>
 
-  <!-- STEP 0: Property -->
+  <!-- STEP 0: Inspection Type -->
   <div class="step active" id="step0">
+    <div class="card">
+      <h3>Select Inspection Type</h3>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('repair')" id="type-repair">
+          <div class="type-icon" style="background:#FFF3E0;color:#E65100">🔧</div>
+          <h4>Repair Inspection</h4>
+          <p>Assess localized damage or wear requiring targeted repairs to specific areas or components.</p>
+        </div>
+        <div class="type-card" onclick="selectType('replacement')" id="type-replacement">
+          <div class="type-icon" style="background:#FFEBEE;color:#C62828">🏠</div>
+          <h4>Roof Replacement</h4>
+          <p>Full evaluation to determine scope, materials, and priority for a complete roof replacement.</p>
+        </div>
+        <div class="type-card" onclick="selectType('due-diligence')" id="type-due-diligence">
+          <div class="type-icon" style="background:#E8F5E9;color:#2E7D32">📋</div>
+          <h4>Due Diligence</h4>
+          <p>Pre-acquisition or lease assessment documenting overall roof condition, remaining life, and capital needs.</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-navy" onclick="goStep(1)" id="typeNextBtn" style="opacity:.4;pointer-events:none">Next → Property</button>
+  </div>
+
+  <!-- STEP 1: Property -->
+  <div class="step" id="step1">
     <div class="card">
       <h3>Property Information</h3>
       <div class="field"><label class="lbl">Property Name</label><input id="propertyName" placeholder="e.g. The Preserve at Tampa Palms"></div>
@@ -109,21 +147,24 @@
         <div class="field"><label class="lbl">Weather</label><input id="weatherConditions" placeholder="Clear, Overcast..."></div>
       </div>
     </div>
-    <button class="btn btn-navy" onclick="goStep(1)">Next → Buildings</button>
-  </div>
-
-  <!-- STEP 1: Buildings -->
-  <div class="step" id="step1">
-    <div class="bldg-tabs" id="bldgTabs"></div>
-    <div id="bldgForm"></div>
     <div class="btn-row">
-      <button class="btn btn-outline" onclick="goStep(0)">← Property</button>
-      <button class="btn btn-navy" onclick="goStep(2)">Next → Notes</button>
+      <button class="btn btn-outline" onclick="goStep(0)">← Type</button>
+      <button class="btn btn-navy" onclick="goStep(2)" style="flex:2">Next → Buildings</button>
     </div>
   </div>
 
-  <!-- STEP 2: Notes -->
+  <!-- STEP 2: Buildings -->
   <div class="step" id="step2">
+    <div class="bldg-tabs" id="bldgTabs"></div>
+    <div id="bldgForm"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(1)">← Property</button>
+      <button class="btn btn-navy" onclick="goStep(3)">Next → Notes</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Notes -->
+  <div class="step" id="step3">
     <div class="card">
       <h3>General Property Notes</h3>
       <div class="field"><label class="lbl">Underlayment Condition</label>
@@ -137,7 +178,7 @@
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn btn-outline" onclick="goStep(1)">← Buildings</button>
+      <button class="btn btn-outline" onclick="goStep(2)">← Buildings</button>
       <button class="btn btn-navy" onclick="showPreview()">Review & Generate</button>
     </div>
   </div>
@@ -151,7 +192,6 @@
       <button class="btn btn-green" onclick="showReport()" style="flex:2">📄 Generate Report</button>
     </div>
   </div>
-
 
 </div>
 
@@ -177,6 +217,14 @@ const P = {
   P3:{label:"P3 – Moderate",color:"#b38600",bg:"#FFFDE7"},
   P4:{label:"P4 – Monitor", color:"#2E7D32",bg:"#E8F5E9"},
 };
+
+const TYPES = {
+  'repair':        { label:'Repair Inspection',  color:'#E65100', bg:'#FFF3E0' },
+  'replacement':   { label:'Roof Replacement',    color:'#C62828', bg:'#FFEBEE' },
+  'due-diligence': { label:'Due Diligence',       color:'#2E7D32', bg:'#E8F5E9' },
+};
+
+let inspectionType = '';
 let buildings = [newBuilding()];
 let activeBldg = 0;
 
@@ -184,15 +232,26 @@ function newBuilding(){
   return {id:Date.now()+Math.random(), name:"", priority:"P2", findings:[""], action:"", photos:[]};
 }
 
+// ── Inspection Type ──
+function selectType(type){
+  inspectionType = type;
+  document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('type-'+type).classList.add('selected');
+  const btn = document.getElementById('typeNextBtn');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
 // ── Navigation ──
 let currentStep = 0;
 function goStep(n){
+  if(n > 0 && !inspectionType){ return; }
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));
   document.getElementById('tabBar').style.display = '';
   document.getElementById('step'+n).classList.add('active');
   currentStep = n;
-  if(n===1) renderBldgTabs();
+  if(n===2) renderBldgTabs();
 }
 function showPreview(){
   document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
@@ -202,7 +261,7 @@ function showPreview(){
 }
 function hidePreview(){
   document.getElementById('tabBar').style.display = '';
-  goStep(2);
+  goStep(3);
   const dlNote = document.getElementById('dlNote');
   if(dlNote) dlNote.style.display='none';
 }
@@ -311,7 +370,9 @@ function removePhoto(i){ buildings[activeBldg].photos.splice(i,1); renderBldgFor
 function renderPreview(){
   const d = collectData();
   const totalPhotos = buildings.reduce((s,b)=>s+b.photos.length,0);
+  const t = TYPES[inspectionType] || {label:'—',color:'#667085',bg:'#F2F4F7'};
   document.getElementById('previewMeta').innerHTML=`
+    <div style="margin-bottom:12px"><span class="type-badge" style="background:${t.bg};color:${t.color}">${t.label}</span></div>
     <h3 style="color:#1B2A4A;font-size:20px;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h3>
     <p style="color:#667085;font-size:14px;margin-bottom:16px">${[d.propertyAddress,d.market,buildings.length+' buildings',totalPhotos+' photos'].filter(Boolean).join(' · ')}</p>
     <div class="meta-grid">
@@ -334,6 +395,7 @@ function renderPreview(){
 // ── Collect ──
 function collectData(){
   return {
+    inspectionType:    inspectionType,
     propertyName:      v('propertyName'),
     propertyAddress:   v('propertyAddress'),
     market:            v('market'),
@@ -358,6 +420,8 @@ function showReport(){
     P3:{text:"#b38600",bg:"#FFFDE7"},P4:{text:"#2E7D32",bg:"#E8F5E9"},
   };
   const badge = p=>`<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;background:${Pc[p].bg};color:${Pc[p].text}">${p}</span>`;
+  const t = TYPES[inspectionType] || {label:'—',color:'#667085',bg:'#F2F4F7'};
+  const typeBadge = `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:${t.bg};color:${t.color}">${t.label}</span>`;
 
   const rows = buildings.map((b,i)=>`
     <tr style="background:${i%2===0?'#f9fafb':'#fff'}">
@@ -400,7 +464,10 @@ function showReport(){
       <div style="text-align:right;font-size:11px;line-height:1.9"><div>${d.inspectionDate}</div><div>Report #: ${d.reportNumber||'—'}</div><div>${d.inspectorName||'—'}</div></div>
     </div>
     <div style="height:4px;background:#CC0000;border-radius:0 0 2px 2px;margin-bottom:16px"></div>
-    <h2 style="font-size:18px;color:#1B2A4A;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h2>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <h2 style="font-size:18px;color:#1B2A4A;margin:0">${d.propertyName||'Untitled Property'}</h2>
+      ${typeBadge}
+    </div>
     <p style="color:#667085;font-size:11px;margin-bottom:12px">${[d.propertyAddress,d.market,d.roofType,buildings.length+' Buildings',d.weatherConditions?'Weather: '+d.weatherConditions:''].filter(Boolean).join(' · ')}</p>
     <hr style="border:none;border-top:1px solid #eaecf0;margin-bottom:16px">
     <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Priority Summary</p>
