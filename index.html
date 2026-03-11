@@ -309,6 +309,7 @@ firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore(),storage=firebase.storage();
 
 const P={P1:{label:"P1 – Critical",color:"#C62828",bg:"#FFEBEE"},P2:{label:"P2 – High",color:"#E65100",bg:"#FFF3E0"},P3:{label:"P3 – Moderate",color:"#b38600",bg:"#FFFDE7"},P4:{label:"P4 – Monitor",color:"#2E7D32",bg:"#E8F5E9"}};
+const RP={urgent:{label:"Urgent",color:"#C62828",bg:"#FFEBEE"},high:{label:"High",color:"#E65100",bg:"#FFF3E0"},medium:{label:"Medium",color:"#b38600",bg:"#FFFDE7"},low:{label:"Low",color:"#2E7D32",bg:"#E8F5E9"}};
 const TYPES={'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},'replacement':{label:'Roof Replacement',color:'#C62828',bg:'#FFEBEE'},'due-diligence':{label:'Due Diligence',color:'#2E7D32',bg:'#E8F5E9'}};
 
 let currentUser=null,isAdmin=false,inspectionType='',activeBldg=0,currentDocId=null,dashFilter='all';
@@ -324,7 +325,7 @@ function newBuilding(){
     actions:[{description:'',photos:[]}]
   };
 }
-function newRepairItem(){ return {description:'',priority:'P2',photos:[]}; }
+function newRepairItem(){ return {description:'',priority:'medium',photos:[]}; }
 function isRepair(){ return inspectionType==='repair'; }
 
 // ═══════ AUTH ═══════
@@ -422,9 +423,9 @@ async function openInspection(docId){
       id:b.id||Date.now()+Math.random(),name:b.name||'',
       priority:b.priority||'P2',findings:b.findings&&b.findings.length?b.findings:[''],action:b.action||'',
       photos:(b.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''})),
-      repairs:(b.repairs||[{description:'',priority:'P2',photos:[]}]).map(r=>
-        typeof r==='string'?{description:r,priority:'P2',photos:[]}:
-        {description:r.description||'',priority:r.priority||'P2',photos:(r.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))}
+      repairs:(b.repairs||[{description:'',priority:'medium',photos:[]}]).map(r=>
+        typeof r==='string'?{description:r,priority:'medium',photos:[]}:
+        {description:r.description||'',priority:r.priority||'medium',photos:(r.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))}
       ),
       actions:(b.actions||[{description:'',photos:[]}]).map(a=>({description:a.description||'',photos:(a.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))}))
     }));
@@ -523,11 +524,6 @@ function renderBldgForm(){
         <div id="repairsWrap">${b.repairs.map((r,ri)=>renderRepairCard(r,ri)).join('')}</div>
         <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addRepair()">+ Add Repair</button>
       </div>
-      <div class="field">
-        <label class="lbl">Recommended Actions (${b.actions.length})</label>
-        <div id="actionsWrap">${b.actions.map((a,ai)=>renderActionCard(a,ai)).join('')}</div>
-        <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addAction()">+ Add Recommended Action</button>
-      </div>
       ${removeBtn}</div>`;
   } else {
     // ── REPLACEMENT / DUE DILIGENCE ──
@@ -564,7 +560,7 @@ function renderRepairCard(r, ri){
     <div class="field" style="margin-bottom:10px">
       <label class="lbl" style="font-size:12px">Priority</label>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-        ${Object.entries(P).map(([k,pv])=>`<button class="p-btn-sm" onclick="setRepairPriority(${ri},'${k}')" style="color:${pv.color};border-color:${r.priority===k?pv.color:'#D0D5DD'};background:${r.priority===k?pv.bg:'white'}">${k}</button>`).join('')}
+        ${Object.entries(RP).map(([k,rpv])=>`<button class="p-btn-sm" onclick="setRepairPriority(${ri},'${k}')" style="color:${rpv.color};border-color:${r.priority===k?rpv.color:'#D0D5DD'};background:${r.priority===k?rpv.bg:'white'}">${rpv.label}</button>`).join('')}
       </div>
     </div>
     <div class="field" style="margin-bottom:0">
@@ -627,14 +623,15 @@ function moveBldg(dir){const ni=activeBldg+dir;if(ni<0||ni>=buildings.length)ret
 function renderPreview(){
   const d=collectData(),t=TYPES[inspectionType]||{label:'—',color:'#667085',bg:'#F2F4F7'};
   let totalPhotos=0;
-  buildings.forEach(b=>{totalPhotos+=b.photos.length;b.repairs.forEach(r=>totalPhotos+=r.photos.length);b.actions.forEach(a=>totalPhotos+=a.photos.length);});
+  buildings.forEach(b=>{totalPhotos+=b.photos.length;b.repairs.forEach(r=>totalPhotos+=r.photos.length);});
   document.getElementById('previewMeta').innerHTML=`<div style="margin-bottom:12px"><span class="type-badge" style="background:${t.bg};color:${t.color}">${t.label}</span></div><h3 style="color:#1B2A4A;font-size:20px;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h3><p style="color:#667085;font-size:14px;margin-bottom:16px">${[d.propertyAddress,d.market,buildings.length+' buildings',totalPhotos+' photos'].filter(Boolean).join(' · ')}</p><div class="meta-grid"><div class="lk">Inspector</div><div class="vl">${d.inspectorName||'—'}</div><div class="lk">Date</div><div class="vl">${d.inspectionDate}</div><div class="lk">Report #</div><div class="vl">${d.reportNumber||'—'}</div><div class="lk">Roof Type</div><div class="vl">${d.roofType}</div></div>`;
 
   if(isRepair()){
     document.getElementById('previewRanking').innerHTML=`<h4 style="color:#1B2A4A;margin-bottom:12px">Repair Summary</h4>`+buildings.map((b,i)=>{
-      const rc=b.repairs.filter(r=>r.description).length,rph=b.repairs.reduce((s,r)=>s+r.photos.length,0),ac=b.actions.filter(a=>a.description).length;
-      const highest=b.repairs.reduce((h,r)=>{const order={P1:1,P2:2,P3:3,P4:4};return order[r.priority]<order[h]?r.priority:h;},'P4');
-      return `<div class="rank-row"><span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span><span class="badge" style="background:${P[highest].bg};color:${P[highest].color}">${highest}</span><span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span><span style="color:#98A2B3;font-size:12px">${rc} repair${rc!==1?'s':''} · ${ac} action${ac!==1?'s':''} · ${rph} photos</span></div>`;
+      const rc=b.repairs.filter(r=>r.description).length,rph=b.repairs.reduce((s,r)=>s+r.photos.length,0);
+      const highest=b.repairs.reduce((h,r)=>{const order={urgent:1,high:2,medium:3,low:4};return (order[r.priority]||3)<(order[h]||3)?r.priority:h;},'low');
+      const hp=RP[highest]||RP.medium;
+      return `<div class="rank-row"><span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span><span class="badge" style="background:${hp.bg};color:${hp.color}">${hp.label}</span><span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span><span style="color:#98A2B3;font-size:12px">${rc} repair${rc!==1?'s':''} · ${rph} photos</span></div>`;
     }).join('');
   } else {
     document.getElementById('previewRanking').innerHTML=`<h4 style="color:#1B2A4A;margin-bottom:12px">Priority Ranking</h4>`+buildings.map((b,i)=>`<div class="rank-row"><span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span><span class="badge" style="background:${P[b.priority].bg};color:${P[b.priority].color}">${b.priority}</span><span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span><span style="color:#98A2B3;font-size:12px">${b.findings.filter(Boolean).length} findings · ${b.photos.length} photos</span></div>`).join('');
@@ -655,31 +652,28 @@ function showReport(){
   if(isRepair()){
     summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#f8f9fa"><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Repairs</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Highest</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th></tr></thead><tbody>${buildings.map((b,i)=>{
       const reps=b.repairs.filter(r=>r.description),rph=b.repairs.reduce((s,r)=>s+r.photos.length,0);
-      const highest=reps.reduce((h,r)=>{const o={P1:1,P2:2,P3:3,P4:4};return o[r.priority]<o[h]?r.priority:h;},'P4');
-      return `<tr style="background:${i%2===0?'#f9fafb':'#fff'}"><td style="padding:6px 8px;color:#667085">${i+1}</td><td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td><td style="padding:6px 8px;text-align:center;color:#667085">${reps.length}</td><td style="padding:6px 8px;text-align:center">${badge(highest)}</td><td style="padding:6px 8px;text-align:center;color:#667085">${rph}</td></tr>`;
+      const highest=reps.reduce((h,r)=>{const o={urgent:1,high:2,medium:3,low:4};return(o[r.priority]||3)<(o[h]||3)?r.priority:h;},'low');
+      const hp=RP[highest]||RP.medium;
+      const rbadge=`<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;background:${hp.bg};color:${hp.color}">${hp.label}</span>`;
+      return `<tr style="background:${i%2===0?'#f9fafb':'#fff'}"><td style="padding:6px 8px;color:#667085">${i+1}</td><td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td><td style="padding:6px 8px;text-align:center;color:#667085">${reps.length}</td><td style="padding:6px 8px;text-align:center">${rbadge}</td><td style="padding:6px 8px;text-align:center;color:#667085">${rph}</td></tr>`;
     }).join('')}</tbody></table>`;
 
     detailsHtml=buildings.map((b,i)=>{
       const reps=b.repairs.filter(r=>r.description||r.photos.length);
-      const acts=b.actions.filter(a=>a.description||a.photos.length);
       return `<div style="margin-bottom:24px;page-break-inside:avoid">
         <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0"><span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span></div>
         <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
-          ${reps.length?`<p style="font-weight:700;color:#1B2A4A;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.3px">Repairs Found</p>`+reps.map((r,ri)=>`
-            <div style="background:#f8f9fa;border:1px solid #eaecf0;border-radius:6px;padding:10px;margin-bottom:8px">
+          ${reps.length?`<p style="font-weight:700;color:#1B2A4A;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.3px">Repairs Found</p>`+reps.map((r,ri)=>{
+            const rp=RP[r.priority]||RP.medium;
+            const rbadge=`<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;background:${rp.bg};color:${rp.color}">${rp.label}</span>`;
+            return `<div style="background:#f8f9fa;border:1px solid #eaecf0;border-radius:6px;padding:10px;margin-bottom:8px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                 <span style="font-weight:600;font-size:13px;color:#344054">Repair ${ri+1}</span>
-                ${badge(r.priority)}
+                ${rbadge}
               </div>
               <p style="margin:0 0 6px;font-size:13px">${r.description}</p>
               ${r.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${r.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}
-            </div>`).join(''):''}
-          ${acts.length?`<p style="font-weight:700;color:#1B2A4A;font-size:12px;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.3px">Recommended Actions</p>`+acts.map((a,ai)=>`
-            <div style="background:#fff;border:1px solid #D0D5DD;border-radius:6px;padding:10px;margin-bottom:8px">
-              <p style="font-weight:600;font-size:12px;color:#475467;margin:0 0 4px">Action ${ai+1}</p>
-              <p style="margin:0 0 6px;font-size:13px">${a.description}</p>
-              ${a.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${a.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}
-            </div>`).join(''):''}
+            </div>`;}).join(''):''}
         </div></div>`;
     }).join('');
   } else {
