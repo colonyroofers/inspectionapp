@@ -340,19 +340,44 @@ auth.onAuthStateChanged(async user=>{
     loadInspections();
   }else{currentUser=null;isAdmin=false;document.getElementById('loginScreen').style.display='';document.getElementById('mainApp').style.display='none';}
 });
+// ── Detect in-app browsers (Gmail, Facebook, Instagram, etc.) ──
+function isInAppBrowser(){
+  const ua=navigator.userAgent||'';
+  return /FBAN|FBAV|Instagram|Twitter|Line\//i.test(ua)||(/iPhone|iPad|iPod|Android/i.test(ua)&&!/Safari/i.test(ua))||/GSA\//i.test(ua);
+}
+
 function signIn(){
   const provider=new firebase.auth.GoogleAuthProvider();
-  // Mobile/in-app browsers can't handle popups — use redirect instead
-  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if(isMobile){auth.signInWithRedirect(provider);}
-  else{auth.signInWithPopup(provider).catch(e=>{
-    // If popup blocked, fall back to redirect
-    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'){auth.signInWithRedirect(provider);}
-    else{const el=document.getElementById('loginError');el.textContent=e.message;el.style.display='block';}
-  });}
+  // In-app browsers (Gmail, Facebook, etc.) can't complete OAuth — prompt to open in real browser
+  if(isInAppBrowser()){
+    const url=window.location.href;
+    const el=document.getElementById('loginError');
+    el.innerHTML=`This app needs to open in Safari or Chrome to sign in.<br><br><button onclick="copyLink()" style="padding:10px 20px;background:#1B2A4A;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">📋 Copy Link</button><br><br><span style="font-size:12px;color:#667085">Then paste it in Safari or Chrome</span>`;
+    el.style.display='block';
+    return;
+  }
+  // Regular browsers: try popup first, fall back to redirect
+  auth.signInWithPopup(provider).catch(e=>{
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
+      auth.signInWithRedirect(provider);
+    } else {
+      const el=document.getElementById('loginError');el.textContent=e.message;el.style.display='block';
+    }
+  });
 }
-// Handle redirect result on page load (for mobile sign-in flow)
-auth.getRedirectResult().catch(e=>{if(e.code&&e.code!=='auth/no-auth-event'){const el=document.getElementById('loginError');if(el){el.textContent=e.message;el.style.display='block';}}});
+function copyLink(){
+  navigator.clipboard.writeText(window.location.href).then(()=>{
+    toast('Link copied! Paste in Safari or Chrome','success');
+  }).catch(()=>{
+    // Fallback for older browsers
+    const ta=document.createElement('textarea');ta.value=window.location.href;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+    toast('Link copied! Paste in Safari or Chrome','success');
+  });
+}
+// Handle redirect result on page load
+auth.getRedirectResult().then(result=>{
+  // If redirect sign-in succeeded, onAuthStateChanged will handle the rest
+}).catch(e=>{if(e.code&&e.code!=='auth/no-auth-event'){const el=document.getElementById('loginError');if(el){el.textContent='Sign-in failed: '+e.message;el.style.display='block';}}});
 function signOut(){auth.signOut();}
 
 // ═══════ DASHBOARD ═══════
