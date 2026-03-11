@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colony Roofers – Inspection Report</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F8F9FA;min-height:100vh;padding:16px}
+  @media print{
+    body{ background:white !important; padding:0 !important; }
+    body > .wrap{ display:none !important; }
+    #reportOverlay > div > div:first-child{ display:none !important; }
+    #reportOverlay{ position:static !important; padding:0 !important; display:block !important; background:white !important; }
+    #reportOverlay > div { max-width:100% !important; }
+    #reportBody { display:block !important; }
+  }
+  .wrap{max-width:600px;margin:0 auto}
+  .header{text-align:center;padding:16px 0 20px;border-bottom:3px solid #CC0000;margin-bottom:20px}
+  .header h1{font-size:20px;font-weight:800;color:#1B2A4A;letter-spacing:1px}
+  .header p{margin-top:4px;color:#667085;font-size:13px}
+  .tabs{display:flex;gap:4px;margin-bottom:20px}
+  .tab{flex:1;text-align:center;padding:10px 0;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid #EAECF0;background:white;color:#667085}
+  .tab.active{background:#1B2A4A;color:white;border-color:#1B2A4A}
+  .card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08);border:1px solid #EAECF0}
+  .card h3{font-size:18px;color:#1B2A4A;margin-bottom:16px}
+  label.lbl{display:block;font-size:13px;font-weight:600;color:#475467;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .field{margin-bottom:16px}
+  input,select,textarea{width:100%;padding:14px 12px;font-size:16px;border:1px solid #D0D5DD;border-radius:8px;background:white;font-family:inherit;-webkit-appearance:none}
+  textarea{resize:vertical;min-height:80px}
+  .row{display:flex;gap:12px}
+  .row .field{flex:1}
+  .btn{display:block;width:100%;padding:14px 24px;font-size:16px;font-weight:600;border:none;border-radius:8px;cursor:pointer;font-family:inherit;touch-action:manipulation;text-align:center}
+  .btn-navy{background:#1B2A4A;color:white}
+  .btn-outline{background:white;color:#1B2A4A;border:2px solid #1B2A4A}
+  .btn-green{background:#2E7D32;color:white}
+  .btn-red{background:#FEE4E2;color:#C62828;font-size:14px;padding:10px 16px}
+  .btn-row{display:flex;gap:12px}
+  .btn-row .btn{flex:1}
+  .step{display:none}
+  .step.active{display:block}
+
+  /* Inspection Type Selection */
+  .type-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+  .type-card{position:relative;background:white;border-radius:12px;padding:20px 20px 20px 62px;border:2px solid #EAECF0;cursor:pointer;transition:all .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .type-card:hover{border-color:#1B2A4A;box-shadow:0 4px 12px rgba(27,42,74,.12)}
+  .type-card.selected{border-color:#1B2A4A;background:#F0F2F6;box-shadow:0 4px 12px rgba(27,42,74,.15)}
+  .type-card.selected::after{content:'✓';position:absolute;top:12px;right:14px;width:26px;height:26px;border-radius:50%;background:#1B2A4A;color:white;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:26px;text-align:center}
+  .type-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .type-card h4{font-size:16px;font-weight:700;color:#1B2A4A;margin-bottom:3px}
+  .type-card p{font-size:13px;color:#667085;line-height:1.4;margin:0}
+
+  /* Buildings */
+  .bldg-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+  .bldg-tab{padding:10px 16px;border-radius:8px;border:1px solid #D0D5DD;background:white;color:#344054;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;min-width:80px;font-family:inherit}
+  .bldg-tab.active{background:#1B2A4A;color:white;border-color:#1B2A4A}
+  .bldg-tab-add{padding:10px 16px;border-radius:8px;border:2px dashed #D0D5DD;background:transparent;color:#1B2A4A;font-size:20px;font-weight:700;cursor:pointer;min-width:48px;font-family:inherit}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .priority-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .p-btn{padding:12px;border-radius:8px;border:1px solid #D0D5DD;background:white;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit}
+  .finding-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+  .finding-row input{flex:1}
+  .finding-row .remove-f{padding:8px 12px;border-radius:6px;border:none;background:#FEE4E2;color:#C62828;font-size:16px;cursor:pointer}
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:12px}
+  .photo-cell{border-radius:8px;overflow:hidden;border:1px solid #EAECF0;position:relative}
+  .photo-cell img{width:100%;height:100px;object-fit:cover;display:block}
+  .photo-cell input{width:100%;padding:6px 8px;font-size:12px;border:none;border-top:1px solid #EAECF0;font-family:inherit}
+  .photo-cell .del-photo{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:white;font-size:14px;cursor:pointer;line-height:24px;text-align:center}
+  .bldg-move{display:flex;gap:8px}
+  .bldg-move button{padding:6px 10px;border-radius:6px;border:1px solid #D0D5DD;background:white;cursor:pointer;font-size:14px;font-family:inherit}
+  /* Preview */
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}
+  .meta-grid .lk{color:#667085}
+  .meta-grid .vl{font-weight:600}
+  .rank-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F2F4F7}
+  .rank-row:last-child{border-bottom:none}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700}
+  .success-box{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px 16px;font-size:13px;color:#166534;line-height:1.6;margin-top:12px}
+  .type-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>COLONY ROOFERS</h1>
+    <p>Roof Inspection Report</p>
+  </div>
+
+  <div class="tabs" id="tabBar">
+    <div class="tab active" onclick="goStep(0)">Type</div>
+    <div class="tab" onclick="goStep(1)">Property</div>
+    <div class="tab" onclick="goStep(2)">Buildings</div>
+    <div class="tab" onclick="goStep(3)">Notes</div>
+  </div>
+
+  <!-- STEP 0: Inspection Type -->
+  <div class="step active" id="step0">
+    <div class="card">
+      <h3>Select Inspection Type</h3>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('repair')" id="type-repair">
+          <div class="type-icon" style="background:#FFF3E0;color:#E65100">🔧</div>
+          <h4>Repair Inspection</h4>
+          <p>Assess localized damage or wear requiring targeted repairs to specific areas or components.</p>
+        </div>
+        <div class="type-card" onclick="selectType('replacement')" id="type-replacement">
+          <div class="type-icon" style="background:#FFEBEE;color:#C62828">🏠</div>
+          <h4>Roof Replacement</h4>
+          <p>Full evaluation to determine scope, materials, and priority for a complete roof replacement.</p>
+        </div>
+        <div class="type-card" onclick="selectType('due-diligence')" id="type-due-diligence">
+          <div class="type-icon" style="background:#E8F5E9;color:#2E7D32">📋</div>
+          <h4>Due Diligence</h4>
+          <p>Pre-acquisition or lease assessment documenting overall roof condition, remaining life, and capital needs.</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-navy" onclick="goStep(1)" id="typeNextBtn" style="opacity:.4;pointer-events:none">Next → Property</button>
+  </div>
+
+  <!-- STEP 1: Property -->
+  <div class="step" id="step1">
+    <div class="card">
+      <h3>Property Information</h3>
+      <div class="field"><label class="lbl">Property Name</label><input id="propertyName" placeholder="e.g. The Preserve at Tampa Palms"></div>
+      <div class="field"><label class="lbl">Property Address</label><input id="propertyAddress" placeholder="Full street address"></div>
+      <div class="field"><label class="lbl">Market</label>
+        <select id="market"><option>Atlanta, GA</option><option selected>Tampa, FL</option><option>Dallas, TX</option></select>
+      </div>
+      <div class="row">
+        <div class="field"><label class="lbl">Total Buildings</label><input id="totalBuildings" type="number" placeholder="#"></div>
+        <div class="field"><label class="lbl">Roof Type</label>
+          <select id="roofType">
+            <option>Concrete Tile</option><option>Asphalt Shingles</option><option>TPO</option>
+            <option>Single-Ply Membrane</option><option>Metal (Accent)</option>
+            <option>Built-Up (BUR)</option><option>Modified Bitumen</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Inspection Details</h3>
+      <div class="field"><label class="lbl">Inspection Date</label><input id="inspectionDate" type="date"></div>
+      <div class="field"><label class="lbl">Inspector Name</label><input id="inspectorName" placeholder="Your name"></div>
+      <div class="row">
+        <div class="field"><label class="lbl">Report #</label><input id="reportNumber" placeholder="CR-2026-001"></div>
+        <div class="field"><label class="lbl">Weather</label><input id="weatherConditions" placeholder="Clear, Overcast..."></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(0)">← Type</button>
+      <button class="btn btn-navy" onclick="goStep(2)" style="flex:2">Next → Buildings</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Buildings -->
+  <div class="step" id="step2">
+    <div class="bldg-tabs" id="bldgTabs"></div>
+    <div id="bldgForm"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(1)">← Property</button>
+      <button class="btn btn-navy" onclick="goStep(3)">Next → Notes</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Notes -->
+  <div class="step" id="step3">
+    <div class="card">
+      <h3>General Property Notes</h3>
+      <div class="field"><label class="lbl">Underlayment Condition</label>
+        <textarea id="underlaymentNotes" placeholder="e.g. Underlayment exceeds 10 years old..."></textarea>
+      </div>
+      <div class="field"><label class="lbl">Tile / Material Identification</label>
+        <input id="tileInfo" placeholder="e.g. Pioneer Tile 16.5in L × 12.5in W">
+      </div>
+      <div class="field"><label class="lbl">Additional Notes</label>
+        <textarea id="generalNotes" style="min-height:100px" placeholder="Any other observations..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="goStep(2)">← Buildings</button>
+      <button class="btn btn-navy" onclick="showPreview()">Review & Generate</button>
+    </div>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="step" id="stepPreview">
+    <div class="card" id="previewMeta"></div>
+    <div class="card" id="previewRanking"></div>
+    <div class="btn-row" style="margin-bottom:12px">
+      <button class="btn btn-outline" onclick="hidePreview()">← Edit</button>
+      <button class="btn btn-green" onclick="showReport()" style="flex:2">📄 Generate Report</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- FULL REPORT VIEW -->
+<div id="reportOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:9999;overflow-y:auto;padding:20px">
+  <div style="max-width:800px;margin:0 auto">
+    <div style="background:#1B2A4A;color:white;padding:12px 16px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;font-size:14px">📄 Inspection Report</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="window.print()" style="background:#2E7D32;border:none;color:white;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">🖨 Print PDF</button>
+        <button onclick="closeReport()" style="background:rgba(255,255,255,.2);border:none;color:white;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">✕ Close</button>
+      </div>
+    </div>
+    <div id="reportBody"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+const P = {
+  P1:{label:"P1 – Critical",color:"#C62828",bg:"#FFEBEE"},
+  P2:{label:"P2 – High",    color:"#E65100",bg:"#FFF3E0"},
+  P3:{label:"P3 – Moderate",color:"#b38600",bg:"#FFFDE7"},
+  P4:{label:"P4 – Monitor", color:"#2E7D32",bg:"#E8F5E9"},
+};
+
+const TYPES = {
+  'repair':        { label:'Repair Inspection',  color:'#E65100', bg:'#FFF3E0' },
+  'replacement':   { label:'Roof Replacement',    color:'#C62828', bg:'#FFEBEE' },
+  'due-diligence': { label:'Due Diligence',       color:'#2E7D32', bg:'#E8F5E9' },
+};
+
+let inspectionType = '';
+let buildings = [newBuilding()];
+let activeBldg = 0;
+
+function newBuilding(){
+  return {id:Date.now()+Math.random(), name:"", priority:"P2", findings:[""], action:"", photos:[]};
+}
+
+// ── Inspection Type ──
+function selectType(type){
+  inspectionType = type;
+  document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('type-'+type).classList.add('selected');
+  const btn = document.getElementById('typeNextBtn');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+// ── Navigation ──
+let currentStep = 0;
+function goStep(n){
+  if(n > 0 && !inspectionType){ return; }
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));
+  document.getElementById('tabBar').style.display = '';
+  document.getElementById('step'+n).classList.add('active');
+  currentStep = n;
+  if(n===2) renderBldgTabs();
+}
+function showPreview(){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tabBar').style.display = 'none';
+  document.getElementById('stepPreview').classList.add('active');
+  renderPreview();
+}
+function hidePreview(){
+  document.getElementById('tabBar').style.display = '';
+  goStep(3);
+  const dlNote = document.getElementById('dlNote');
+  if(dlNote) dlNote.style.display='none';
+}
+
+// ── Buildings ──
+function renderBldgTabs(){
+  const ct = document.getElementById('bldgTabs');
+  ct.innerHTML = '';
+  buildings.forEach((b,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'bldg-tab'+(i===activeBldg?' active':'');
+    btn.innerHTML = `<span class="dot" style="background:${P[b.priority].color}"></span>${b.name||'Bldg '+(i+1)}`;
+    btn.onclick = ()=>{ activeBldg=i; renderBldgTabs(); renderBldgForm(); };
+    ct.appendChild(btn);
+  });
+  const add = document.createElement('button');
+  add.className='bldg-tab-add'; add.textContent='+';
+  add.onclick=()=>{ buildings.push(newBuilding()); activeBldg=buildings.length-1; renderBldgTabs(); renderBldgForm(); };
+  ct.appendChild(add);
+  renderBldgForm();
+}
+
+function renderBldgForm(){
+  const b = buildings[activeBldg];
+  const form = document.getElementById('bldgForm');
+  form.innerHTML = `
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">Building ${activeBldg+1} of ${buildings.length}</h3>
+      <div class="bldg-move">
+        <button onclick="moveBldg(-1)" ${activeBldg===0?'disabled style="opacity:.3"':''}>↑</button>
+        <button onclick="moveBldg(1)" ${activeBldg===buildings.length-1?'disabled style="opacity:.3"':''}>↓</button>
+      </div>
+    </div>
+    <div class="field"><label class="lbl">Building Name / ID</label>
+      <input id="bName" value="${esc(b.name)}" placeholder="e.g. Building 100" oninput="buildings[activeBldg].name=this.value;renderBldgTabs()">
+    </div>
+    <div class="field"><label class="lbl">Priority</label>
+      <div class="priority-grid">${Object.entries(P).map(([k,v])=>`
+        <button class="p-btn" onclick="setPriority('${k}')"
+          style="color:${v.color};border-color:${b.priority===k?v.color:'#D0D5DD'};background:${b.priority===k?v.bg:'white'}">
+          ${v.label}
+        </button>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label class="lbl">Findings</label>
+      <div id="findingsWrap">${renderFindings(b)}</div>
+      <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addFinding()">+ Add Finding</button>
+    </div>
+    <div class="field"><label class="lbl">Recommended Action</label>
+      <textarea id="bAction" placeholder="e.g. Full roof replacement recommended..." oninput="buildings[activeBldg].action=this.value">${esc(b.action)}</textarea>
+    </div>
+    <div class="field"><label class="lbl">Photos (${b.photos.length})</label>
+      <div class="photo-grid" id="photoGrid">${renderPhotos(b)}</div>
+      <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
+      <button class="btn btn-outline" style="padding:12px;font-size:14px" onclick="document.getElementById('photoInput').click()">📷 Add Photos</button>
+    </div>
+    ${buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Building</button>`:''}
+  </div>`;
+}
+
+function renderFindings(b){
+  return b.findings.map((f,i)=>`
+    <div class="finding-row">
+      <span style="color:#98A2B3;font-weight:700">•</span>
+      <input value="${esc(f)}" placeholder="e.g. 20 broken tiles" oninput="buildings[activeBldg].findings[${i}]=this.value">
+      ${b.findings.length>1?`<button class="remove-f" onclick="removeFinding(${i})">×</button>`:''}
+    </div>`).join('');
+}
+
+function renderPhotos(b){
+  return b.photos.map((p,i)=>`
+    <div class="photo-cell">
+      <img src="${p.data}" alt="">
+      <input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].photos[${i}].caption=this.value">
+      <button class="del-photo" onclick="removePhoto(${i})">×</button>
+    </div>`).join('');
+}
+
+function esc(s){ return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function setPriority(p){ buildings[activeBldg].priority=p; renderBldgTabs(); renderBldgForm(); }
+function addFinding(){ buildings[activeBldg].findings.push(''); renderBldgForm(); }
+function removeFinding(i){ buildings[activeBldg].findings.splice(i,1); renderBldgForm(); }
+function removeBldg(){ buildings.splice(activeBldg,1); activeBldg=Math.max(0,activeBldg-1); renderBldgTabs(); }
+function moveBldg(dir){
+  const ni=activeBldg+dir;
+  if(ni<0||ni>=buildings.length) return;
+  [buildings[activeBldg],buildings[ni]]=[buildings[ni],buildings[activeBldg]];
+  activeBldg=ni; renderBldgTabs();
+}
+function addPhotos(input){
+  const files=Array.from(input.files);
+  let loaded=0;
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{ buildings[activeBldg].photos.push({data:e.target.result,caption:''}); loaded++;
+      if(loaded===files.length) renderBldgForm(); };
+    r.readAsDataURL(file);
+  });
+  input.value='';
+}
+function removePhoto(i){ buildings[activeBldg].photos.splice(i,1); renderBldgForm(); }
+
+// ── Preview ──
+function renderPreview(){
+  const d = collectData();
+  const totalPhotos = buildings.reduce((s,b)=>s+b.photos.length,0);
+  const t = TYPES[inspectionType] || {label:'—',color:'#667085',bg:'#F2F4F7'};
+  document.getElementById('previewMeta').innerHTML=`
+    <div style="margin-bottom:12px"><span class="type-badge" style="background:${t.bg};color:${t.color}">${t.label}</span></div>
+    <h3 style="color:#1B2A4A;font-size:20px;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h3>
+    <p style="color:#667085;font-size:14px;margin-bottom:16px">${[d.propertyAddress,d.market,buildings.length+' buildings',totalPhotos+' photos'].filter(Boolean).join(' · ')}</p>
+    <div class="meta-grid">
+      <div class="lk">Inspector</div><div class="vl">${d.inspectorName||'—'}</div>
+      <div class="lk">Date</div><div class="vl">${d.inspectionDate}</div>
+      <div class="lk">Report #</div><div class="vl">${d.reportNumber||'—'}</div>
+      <div class="lk">Roof Type</div><div class="vl">${d.roofType}</div>
+    </div>`;
+  document.getElementById('previewRanking').innerHTML=`
+    <h4 style="color:#1B2A4A;margin-bottom:12px">Priority Ranking</h4>`+
+    buildings.map((b,i)=>`
+      <div class="rank-row">
+        <span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span>
+        <span class="badge" style="background:${P[b.priority].bg};color:${P[b.priority].color}">${b.priority}</span>
+        <span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span>
+        <span style="color:#98A2B3;font-size:12px">${b.findings.filter(Boolean).length} findings · ${b.photos.length} photos</span>
+      </div>`).join('');
+}
+
+// ── Collect ──
+function collectData(){
+  return {
+    inspectionType:    inspectionType,
+    propertyName:      v('propertyName'),
+    propertyAddress:   v('propertyAddress'),
+    market:            v('market'),
+    totalBuildings:    v('totalBuildings'),
+    roofType:          v('roofType'),
+    inspectionDate:    v('inspectionDate'),
+    inspectorName:     v('inspectorName'),
+    reportNumber:      v('reportNumber'),
+    weatherConditions: v('weatherConditions'),
+    underlaymentNotes: v('underlaymentNotes'),
+    tileInfo:          v('tileInfo'),
+    generalNotes:      v('generalNotes'),
+  };
+}
+function v(id){ const el=document.getElementById(id); return el?el.value:''; }
+
+// ── Report ──
+function showReport(){
+  const d = collectData();
+  const Pc = {
+    P1:{text:"#C62828",bg:"#FFEBEE"},P2:{text:"#E65100",bg:"#FFF3E0"},
+    P3:{text:"#b38600",bg:"#FFFDE7"},P4:{text:"#2E7D32",bg:"#E8F5E9"},
+  };
+  const badge = p=>`<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;background:${Pc[p].bg};color:${Pc[p].text}">${p}</span>`;
+  const t = TYPES[inspectionType] || {label:'—',color:'#667085',bg:'#F2F4F7'};
+  const typeBadge = `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:${t.bg};color:${t.color}">${t.label}</span>`;
+
+  const rows = buildings.map((b,i)=>`
+    <tr style="background:${i%2===0?'#f9fafb':'#fff'}">
+      <td style="padding:6px 8px;color:#667085">${i+1}</td>
+      <td style="padding:6px 8px">${badge(b.priority)}</td>
+      <td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td>
+      <td style="padding:6px 8px;color:#667085;text-align:center">${b.findings.filter(Boolean).length}</td>
+      <td style="padding:6px 8px;color:#667085;text-align:center">${b.photos.length}</td>
+    </tr>`).join('');
+
+  const details = buildings.map((b,i)=>{
+    const fi = b.findings.filter(Boolean);
+    return `
+    <div style="margin-bottom:24px;page-break-inside:avoid">
+      <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span>
+        ${badge(b.priority)}
+      </div>
+      <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
+        ${fi.length?`<p style="font-weight:600;color:#475467;margin:0 0 4px">Findings</p><ul style="margin:0 0 10px;padding-left:20px">${fi.map(f=>`<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`:''}
+        ${b.action?`<p style="font-weight:600;color:#475467;margin:10px 0 4px">Recommended Action</p><p style="margin:0 0 10px;padding-left:8px">${b.action}</p>`:''}
+        ${b.photos.length?`<p style="font-weight:600;color:#475467;margin:10px 0 8px">Photos (${b.photos.length})</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            ${b.photos.map(ph=>`<div><img src="${ph.data}" style="width:100%;height:160px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}
+          </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const notes = [['UNDERLAYMENT NOTES',d.underlaymentNotes],['TILE / MATERIAL ID',d.tileInfo],['GENERAL NOTES',d.generalNotes]]
+    .filter(([,val])=>val).map(([t,val])=>`
+    <div style="margin-bottom:16px">
+      <p style="background:#f8f9fa;padding:7px 10px;font-weight:700;font-size:11px;color:#1B2A4A;margin:0 0 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px">${t}</p>
+      <p style="margin:0 0 0 8px;font-size:12px">${val}</p>
+    </div>`).join('');
+
+  document.getElementById('reportBody').innerHTML = `
+    <div style="background:#1B2A4A;color:white;padding:14px 20px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div><div style="font-size:18px;font-weight:800;letter-spacing:1px">COLONY ROOFERS</div><div style="font-size:10px;opacity:.8;margin-top:2px">ROOF INSPECTION REPORT</div></div>
+      <div style="text-align:right;font-size:11px;line-height:1.9"><div>${d.inspectionDate}</div><div>Report #: ${d.reportNumber||'—'}</div><div>${d.inspectorName||'—'}</div></div>
+    </div>
+    <div style="height:4px;background:#CC0000;border-radius:0 0 2px 2px;margin-bottom:16px"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <h2 style="font-size:18px;color:#1B2A4A;margin:0">${d.propertyName||'Untitled Property'}</h2>
+      ${typeBadge}
+    </div>
+    <p style="color:#667085;font-size:11px;margin-bottom:12px">${[d.propertyAddress,d.market,d.roofType,buildings.length+' Buildings',d.weatherConditions?'Weather: '+d.weatherConditions:''].filter(Boolean).join(' · ')}</p>
+    <hr style="border:none;border-top:1px solid #eaecf0;margin-bottom:16px">
+    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Priority Summary</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <thead><tr style="background:#f8f9fa">
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th>
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Priority</th>
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Findings</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Building Details</p>
+    ${details}${notes}`;
+
+  document.getElementById('reportOverlay').style.display='block';
+  document.getElementById('reportOverlay').scrollTop=0;
+}
+function closeReport(){
+  document.getElementById('reportOverlay').style.display='none';
+}
+
+// ── Init ──
+document.getElementById('inspectionDate').value = new Date().toISOString().split('T')[0];
+renderBldgTabs();
+</script>
+</body>
+</html>
