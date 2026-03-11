@@ -27,6 +27,9 @@
   .user-pill{display:flex;align-items:center;gap:8px;font-size:13px;color:#475467}
   .user-pill img{width:28px;height:28px;border-radius:50%;border:2px solid #EAECF0}
   .user-pill button{background:none;border:none;color:#C62828;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline}
+  .header-menu-btn{padding:8px 16px;border-radius:8px;border:1px solid #EAECF0;background:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#667085;transition:all .15s}
+  .header-menu-btn.active{background:#1B2A4A;color:white;border-color:#1B2A4A}
+  .header-menu-btn:hover:not(.active){border-color:#1B2A4A;color:#1B2A4A}
   .tabs{display:flex;gap:4px;margin-bottom:20px}
   .tab{flex:1;text-align:center;padding:10px 0;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid #EAECF0;background:white;color:#667085}
   .tab.active{background:#1B2A4A;color:white;border-color:#1B2A4A}
@@ -115,6 +118,22 @@
   .photo-cell img{width:100%;height:100px;object-fit:cover;display:block}
   .photo-cell input{width:100%;padding:6px 8px;font-size:12px;border:none;border-top:1px solid #EAECF0;font-family:inherit}
   .photo-cell .del-photo{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:white;font-size:14px;cursor:pointer;line-height:24px;text-align:center}
+  .photo-cell .edit-photo{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(27,42,74,.7);color:white;font-size:12px;cursor:pointer;line-height:24px;text-align:center}
+  /* Markup overlay */
+  .markup-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1a1a;z-index:10002;display:none;flex-direction:column}
+  .markup-overlay.active{display:flex}
+  .markup-topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#111;flex-shrink:0}
+  .markup-topbar button{border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .markup-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .markup-canvas-wrap canvas{max-width:100%;max-height:100%;touch-action:none}
+  .markup-toolbar{display:flex;gap:6px;padding:10px 12px;background:#111;flex-shrink:0;flex-wrap:wrap;justify-content:center;align-items:center}
+  .markup-tool{width:40px;height:40px;border-radius:8px;border:2px solid transparent;background:#333;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+  .markup-tool.active{border-color:#CC0000;background:#444}
+  .markup-color{width:32px;height:32px;border-radius:50%;border:3px solid transparent;cursor:pointer}
+  .markup-color.active{border-color:white}
+  .markup-size{width:auto;padding:6px 10px;border-radius:6px;border:2px solid transparent;background:#333;color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+  .markup-size.active{border-color:#CC0000}
+  .markup-divider{width:1px;height:28px;background:#555;margin:0 4px}
   .bldg-move{display:flex;gap:8px}
   .bldg-move button{padding:6px 10px;border-radius:6px;border:1px solid #D0D5DD;background:white;cursor:pointer;font-size:14px;font-family:inherit}
   .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}
@@ -188,15 +207,16 @@
       <div class="user-pill" id="userPill"></div>
     </div>
     <p style="color:#667085;font-size:13px">Roof Inspection App</p>
+    <div id="headerMenu" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #EAECF0;gap:8px;justify-content:center">
+      <button class="header-menu-btn active" id="menuInspections" onclick="menuNav('inspections')">📋 Inspections</button>
+      <button class="header-menu-btn" id="menuTeam" onclick="menuNav('team')">👥 Team</button>
+    </div>
   </div>
 
   <div id="dashboard">
     <div class="dash-header">
       <h2>Inspections</h2>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-outline" id="teamBtn" style="display:none;width:auto;padding:10px 16px;font-size:14px" onclick="openTeamPanel()">👥 Team</button>
-        <button class="btn btn-navy" style="width:auto;padding:10px 20px;font-size:14px" onclick="startNewInspection()">+ New</button>
-      </div>
+      <button class="btn btn-navy" style="width:auto;padding:10px 20px;font-size:14px" onclick="startNewInspection()">+ New</button>
     </div>
     <div class="admin-toggle" id="adminToggle" style="display:none">
       <label><input type="checkbox" id="showAllToggle" onchange="loadInspections()"> Show all team inspections</label>
@@ -212,15 +232,13 @@
 
   <!-- TEAM MANAGEMENT (admin only) -->
   <div id="teamPanel" style="display:none">
-    <div style="margin-bottom:16px">
-      <button class="btn btn-outline" style="width:auto;padding:8px 16px;font-size:13px" onclick="closeTeamPanel()">← Back to Inspections</button>
-    </div>
     <div class="team-header">
       <h2>Team Management</h2>
     </div>
     <div class="team-stats" id="teamStats"></div>
     <div class="team-add-form">
       <label class="lbl" style="margin-bottom:8px">Add Team Member</label>
+      <div class="field" style="margin-bottom:8px"><input id="teamAddName" placeholder="Full name (e.g. John Smith)" style="font-size:14px;padding:10px 12px"></div>
       <div class="team-add-row">
         <input id="teamAddEmail" type="email" placeholder="email@example.com" style="font-size:14px;padding:10px 12px">
         <select id="teamAddRole" style="font-size:14px;padding:10px 8px">
@@ -354,6 +372,36 @@
   </div>
 </div>
 
+<!-- MARKUP OVERLAY -->
+<div class="markup-overlay" id="markupOverlay">
+  <div class="markup-topbar">
+    <button onclick="cancelMarkup()" style="background:#444;color:white">✕ Cancel</button>
+    <span style="color:#999;font-size:13px;font-weight:600" id="markupTitle">Markup Photo</span>
+    <button onclick="saveMarkup()" style="background:#2E7D32;color:white">✓ Save</button>
+  </div>
+  <div class="markup-canvas-wrap">
+    <canvas id="markupCanvas"></canvas>
+  </div>
+  <div class="markup-toolbar">
+    <button class="markup-tool active" data-tool="pen" onclick="setMarkupTool('pen')" title="Draw">✏️</button>
+    <button class="markup-tool" data-tool="arrow" onclick="setMarkupTool('arrow')" title="Arrow">➡️</button>
+    <button class="markup-tool" data-tool="circle" onclick="setMarkupTool('circle')" title="Circle">⭕</button>
+    <button class="markup-tool" data-tool="rect" onclick="setMarkupTool('rect')" title="Rectangle">▭</button>
+    <div class="markup-divider"></div>
+    <div class="markup-color active" data-color="#CC0000" style="background:#CC0000" onclick="setMarkupColor('#CC0000')"></div>
+    <div class="markup-color" data-color="#FFD600" style="background:#FFD600" onclick="setMarkupColor('#FFD600')"></div>
+    <div class="markup-color" data-color="#2E7D32" style="background:#2E7D32" onclick="setMarkupColor('#2E7D32')"></div>
+    <div class="markup-color" data-color="#1565C0" style="background:#1565C0" onclick="setMarkupColor('#1565C0')"></div>
+    <div class="markup-color" data-color="#FFFFFF" style="background:#FFFFFF" onclick="setMarkupColor('#FFFFFF')"></div>
+    <div class="markup-divider"></div>
+    <button class="markup-size" data-size="3" onclick="setMarkupSize(3)">S</button>
+    <button class="markup-size active" data-size="5" onclick="setMarkupSize(5)">M</button>
+    <button class="markup-size" data-size="10" onclick="setMarkupSize(10)">L</button>
+    <div class="markup-divider"></div>
+    <button class="markup-tool" onclick="undoMarkup()" title="Undo">↩️</button>
+  </div>
+</div>
+
 <div id="savingOverlay" class="saving-overlay" style="display:none">
   <div class="spinner"></div>
   <span id="savingText">Saving...</span>
@@ -368,7 +416,7 @@ const P={P1:{label:"P1 – Critical",color:"#C62828",bg:"#FFEBEE"},P2:{label:"P2
 const RP={urgent:{label:"Urgent",color:"#C62828",bg:"#FFEBEE"},high:{label:"High",color:"#E65100",bg:"#FFF3E0"},medium:{label:"Medium",color:"#b38600",bg:"#FFFDE7"},low:{label:"Low",color:"#2E7D32",bg:"#E8F5E9"}};
 const TYPES={'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},'replacement':{label:'Roof Replacement',color:'#C62828',bg:'#FFEBEE'},'due-diligence':{label:'Due Diligence',color:'#2E7D32',bg:'#E8F5E9'}};
 
-let currentUser=null,isAdmin=false,inspectionType='',activeBldg=0,currentDocId=null,dashFilter='all';
+let currentUser=null,isAdmin=false,inspectionType='',activeBldg=0,currentDocId=null,dashFilter='all',currentTeamName='';
 let buildings=[newBuilding()];
 
 function newBuilding(){
@@ -392,36 +440,44 @@ auth.onAuthStateChanged(async user=>{
   if(user){
     currentUser=user;
     isAdmin=false;
+    currentTeamName='';
     try{
-      // Check team collection for this user's role
+      // Check team collection for this user's role and name
       const teamDoc=await db.collection('team').doc(user.email.toLowerCase()).get();
       if(teamDoc.exists){
-        isAdmin=teamDoc.data().role==='admin';
+        const td=teamDoc.data();
+        isAdmin=td.role==='admin';
+        currentTeamName=td.name||'';
+        // If team record has no name but Google has one, update it
+        if(!td.name&&user.displayName){
+          await db.collection('team').doc(user.email.toLowerCase()).update({name:user.displayName});
+          currentTeamName=user.displayName;
+        }
       } else {
         // Check if team collection is empty (first-time setup)
         const teamSnap=await db.collection('team').limit(1).get();
         if(teamSnap.empty){
-          // Bootstrap: first user + bootstrap admin both get admin
+          const name=user.displayName||'';
           await db.collection('team').doc(user.email.toLowerCase()).set({
-            email:user.email.toLowerCase(),name:user.displayName||'',role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
+            email:user.email.toLowerCase(),name:name,role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
           });
           isAdmin=true;
-          // Also add bootstrap admin if different from current user
+          currentTeamName=name;
           if(user.email.toLowerCase()!==BOOTSTRAP_ADMIN.toLowerCase()){
             await db.collection('team').doc(BOOTSTRAP_ADMIN.toLowerCase()).set({
               email:BOOTSTRAP_ADMIN.toLowerCase(),name:'Zach Reece',role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
             });
           }
         }
-        // If team exists but user isn't in it, they're a regular user (not on team)
       }
     }catch(e){console.error('Team check error:',e);}
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='';
-    document.getElementById('userPill').innerHTML=`<img src="${user.photoURL||''}" alt="" onerror="this.style.display='none'"><span>${user.displayName||user.email}</span>${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}<button onclick="signOut()">Sign out</button>`;
-    if(isAdmin){document.getElementById('adminToggle').style.display='';document.getElementById('teamBtn').style.display='';}
+    document.getElementById('userPill').innerHTML=`<img src="${user.photoURL||''}" alt="" onerror="this.style.display='none'"><span>${currentTeamName||user.displayName||user.email}</span>${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}<button onclick="signOut()">Sign out</button>`;
+    if(isAdmin){document.getElementById('adminToggle').style.display='';document.getElementById('headerMenu').style.display='flex';}
+    else{document.getElementById('headerMenu').style.display='none';}
     loadInspections();
-  }else{currentUser=null;isAdmin=false;document.getElementById('loginScreen').style.display='';document.getElementById('mainApp').style.display='none';}
+  }else{currentUser=null;isAdmin=false;currentTeamName='';document.getElementById('loginScreen').style.display='';document.getElementById('mainApp').style.display='none';}
 });
 // ── Detect in-app browsers (Gmail, Facebook, Instagram, etc.) ──
 function isInAppBrowser(){
@@ -528,7 +584,7 @@ function startNewInspection(){
   document.getElementById('market').selectedIndex=0;document.getElementById('roofType').selectedIndex=0;
   document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('typeNextBtn').disabled=true;
-  if(currentUser&&currentUser.displayName)document.getElementById('inspectorName').value=currentUser.displayName;
+  if(currentUser)document.getElementById('inspectorName').value=currentTeamName||currentUser.displayName||'';
   showForm();goStep(0);
 }
 async function openInspection(docId){
@@ -555,7 +611,7 @@ async function openInspection(docId){
   }catch(e){hideSaving();toast('Error: '+e.message,'error');}
 }
 function showForm(){document.getElementById('dashboard').style.display='none';document.getElementById('teamPanel').style.display='none';document.getElementById('inspectionForm').style.display='';}
-function backToDash(){clearAutoSave();isDirty=false;document.getElementById('inspectionForm').style.display='none';document.getElementById('teamPanel').style.display='none';document.getElementById('dashboard').style.display='';loadInspections();}
+function backToDash(){clearAutoSave();isDirty=false;document.getElementById('inspectionForm').style.display='none';document.getElementById('teamPanel').style.display='none';document.getElementById('dashboard').style.display='';document.querySelectorAll('.header-menu-btn').forEach(b=>b.classList.remove('active'));document.getElementById('menuInspections').classList.add('active');loadInspections();}
 
 // ═══════ SAVE ═══════
 async function saveInspection(status){
@@ -639,7 +695,7 @@ async function doSave(status){
       }
       savedBuildings.push({name:b.name,priority:b.priority,findings:b.findings,action:b.action,photos:mainPhotos,repairs:savedRepairs,actions:savedActions});
     }
-    const data={inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:v('reportNumber'),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes'),buildings:savedBuildings,status,userId:currentUser.uid,userEmail:currentUser.email,userName:currentUser.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    const data={inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:v('reportNumber'),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes'),buildings:savedBuildings,status,userId:currentUser.uid,userEmail:currentUser.email,userName:currentTeamName||currentUser.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     if(currentDocId){await db.collection('inspections').doc(currentDocId).update(data);}
     else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();const ref=await db.collection('inspections').add(data);currentDocId=ref.id;}
 }
@@ -735,7 +791,7 @@ function renderBldgForm(){
         <textarea id="bAction" placeholder="e.g. Full roof replacement recommended..." oninput="buildings[activeBldg].action=this.value">${esc(b.action)}</textarea>
       </div>
       <div class="field"><label class="lbl">Photos (${b.photos.length})</label>
-        <div class="photo-grid">${b.photos.map((p,i)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].photos[${i}].caption=this.value"><button class="del-photo" onclick="removePhoto(${i})">×</button></div>`).join('')}</div>
+        <div class="photo-grid">${b.photos.map((p,i)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].photos[${i}].caption=this.value"><button class="edit-photo" onclick="openMarkup('main',${i})">✎</button><button class="del-photo" onclick="removePhoto(${i})">×</button></div>`).join('')}</div>
         <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
         <button class="btn btn-outline" style="padding:12px;font-size:14px" onclick="document.getElementById('photoInput').click()">📷 Add Photos</button>
       </div>
@@ -761,7 +817,7 @@ function renderRepairCard(r, ri){
     </div>
     <div class="field" style="margin-bottom:0">
       <label class="lbl" style="font-size:12px">Photos (${r.photos.length})</label>
-      <div class="photo-grid">${r.photos.map((p,pi)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].repairs[${ri}].photos[${pi}].caption=this.value"><button class="del-photo" onclick="removeRepairPhoto(${ri},${pi})">×</button></div>`).join('')}</div>
+      <div class="photo-grid">${r.photos.map((p,pi)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].repairs[${ri}].photos[${pi}].caption=this.value"><button class="edit-photo" onclick="openMarkup('repair',${pi},${ri})">✎</button><button class="del-photo" onclick="removeRepairPhoto(${ri},${pi})">×</button></div>`).join('')}</div>
       <input type="file" id="repairPhotoInput${ri}" accept="image/*" multiple style="display:none" onchange="addRepairPhotos(${ri},this)">
       <button class="btn btn-outline" style="padding:8px 12px;font-size:13px" onclick="document.getElementById('repairPhotoInput${ri}').click()">📷 Add Photos</button>
     </div>
@@ -780,7 +836,7 @@ function renderActionCard(a, ai){
     </div>
     <div class="field" style="margin-bottom:0">
       <label class="lbl" style="font-size:12px">Photos (${a.photos.length})</label>
-      <div class="photo-grid">${a.photos.map((p,pi)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].actions[${ai}].photos[${pi}].caption=this.value"><button class="del-photo" onclick="removeActionPhoto(${ai},${pi})">×</button></div>`).join('')}</div>
+      <div class="photo-grid">${a.photos.map((p,pi)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].actions[${ai}].photos[${pi}].caption=this.value"><button class="edit-photo" onclick="openMarkup('action',${pi},${ai})">✎</button><button class="del-photo" onclick="removeActionPhoto(${ai},${pi})">×</button></div>`).join('')}</div>
       <input type="file" id="actionPhotoInput${ai}" accept="image/*" multiple style="display:none" onchange="addActionPhotos(${ai},this)">
       <button class="btn btn-outline" style="padding:8px 12px;font-size:13px" onclick="document.getElementById('actionPhotoInput${ai}').click()">📷 Add Photos</button>
     </div>
@@ -895,16 +951,24 @@ function showReport(){
 function closeReport(){document.getElementById('reportOverlay').style.display='none';}
 
 // ═══════ TEAM MANAGEMENT ═══════
-function openTeamPanel(){
-  if(!isAdmin)return;
-  document.getElementById('dashboard').style.display='none';
-  document.getElementById('teamPanel').style.display='';
-  loadTeamMembers();
+function menuNav(section){
+  document.querySelectorAll('.header-menu-btn').forEach(b=>b.classList.remove('active'));
+  if(section==='team'){
+    document.getElementById('menuTeam').classList.add('active');
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('inspectionForm').style.display='none';
+    document.getElementById('teamPanel').style.display='';
+    loadTeamMembers();
+  } else {
+    document.getElementById('menuInspections').classList.add('active');
+    document.getElementById('teamPanel').style.display='none';
+    document.getElementById('inspectionForm').style.display='none';
+    document.getElementById('dashboard').style.display='';
+    loadInspections();
+  }
 }
-function closeTeamPanel(){
-  document.getElementById('teamPanel').style.display='none';
-  document.getElementById('dashboard').style.display='';
-}
+function openTeamPanel(){menuNav('team');}
+function closeTeamPanel(){menuNav('inspections');}
 
 async function loadTeamMembers(){
   const list=document.getElementById('teamList');
@@ -941,20 +1005,22 @@ async function loadTeamMembers(){
 }
 
 async function addTeamMember(){
+  const nameInput=document.getElementById('teamAddName');
   const emailInput=document.getElementById('teamAddEmail');
   const roleInput=document.getElementById('teamAddRole');
   const errEl=document.getElementById('teamAddError');
+  const name=nameInput.value.trim();
   const email=emailInput.value.trim().toLowerCase();
   errEl.style.display='none';
+  if(!name){errEl.textContent='Please enter a name.';errEl.style.display='block';return;}
   if(!email||!email.includes('@')){errEl.textContent='Please enter a valid email address.';errEl.style.display='block';return;}
   try{
-    // Check if already exists
     const existing=await db.collection('team').doc(email).get();
     if(existing.exists){errEl.textContent='This email is already on the team.';errEl.style.display='block';return;}
     await db.collection('team').doc(email).set({
-      email:email,name:'',role:roleInput.value,addedAt:firebase.firestore.FieldValue.serverTimestamp()
+      email:email,name:name,role:roleInput.value,addedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-    emailInput.value='';roleInput.value='user';
+    nameInput.value='';emailInput.value='';roleInput.value='user';
     toast('Team member added!','success');
     loadTeamMembers();
   }catch(e){errEl.textContent='Failed to add: '+e.message;errEl.style.display='block';}
@@ -974,7 +1040,7 @@ async function toggleRole(email,currentRole){
     // If we changed our own role, update the local state
     if(currentUser&&email===currentUser.email.toLowerCase()){
       isAdmin=newRole==='admin';
-      document.getElementById('userPill').innerHTML=`<img src="${currentUser.photoURL||''}" alt="" onerror="this.style.display='none'"><span>${currentUser.displayName||currentUser.email}</span>${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}<button onclick="signOut()">Sign out</button>`;
+      document.getElementById('userPill').innerHTML=`<img src="${currentUser.photoURL||''}" alt="" onerror="this.style.display='none'"><span>${currentTeamName||currentUser.displayName||currentUser.email}</span>${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}<button onclick="signOut()">Sign out</button>`;
     }
   }catch(e){toast('Failed: '+e.message,'error');}
 }
@@ -986,6 +1052,131 @@ async function removeTeamMember(email,name){
     toast(`${name} removed from team`,'success');
     loadTeamMembers();
   }catch(e){toast('Failed: '+e.message,'error');}
+}
+
+// ═══════ PHOTO MARKUP ═══════
+let mkCanvas,mkCtx,mkImg,mkTool='pen',mkColor='#CC0000',mkSize=5;
+let mkType='',mkPhotoIdx=0,mkSubIdx=0;
+let mkDrawing=false,mkStartX=0,mkStartY=0,mkHistory=[];
+let mkBaseData='';
+
+function openMarkup(type,photoIdx,subIdx){
+  mkType=type;mkPhotoIdx=photoIdx;mkSubIdx=subIdx||0;
+  let photo;
+  if(type==='main') photo=buildings[activeBldg].photos[photoIdx];
+  else if(type==='repair') photo=buildings[activeBldg].repairs[subIdx].photos[photoIdx];
+  else if(type==='action') photo=buildings[activeBldg].actions[subIdx].photos[photoIdx];
+  if(!photo)return;
+  const src=photo.url||photo.data;
+  if(!src)return;
+
+  mkCanvas=document.getElementById('markupCanvas');
+  mkCtx=mkCanvas.getContext('2d');
+  mkHistory=[];
+  mkImg=new Image();
+  mkImg.crossOrigin='anonymous';
+  mkImg.onload=()=>{
+    const wrap=mkCanvas.parentElement;
+    const maxW=wrap.clientWidth-16;
+    const maxH=wrap.clientHeight-16;
+    const scale=Math.min(maxW/mkImg.width,maxH/mkImg.height,1);
+    mkCanvas.width=Math.round(mkImg.width*scale);
+    mkCanvas.height=Math.round(mkImg.height*scale);
+    mkCtx.drawImage(mkImg,0,0,mkCanvas.width,mkCanvas.height);
+    mkBaseData=mkCanvas.toDataURL('image/jpeg',0.92);
+    document.getElementById('markupOverlay').classList.add('active');
+  };
+  mkImg.onerror=()=>{toast('Could not load photo for markup','error');};
+  mkImg.src=src;
+  setMarkupTool('pen');setMarkupColor('#CC0000');setMarkupSize(5);
+}
+
+function cancelMarkup(){document.getElementById('markupOverlay').classList.remove('active');}
+
+function saveMarkup(){
+  const dataUrl=mkCanvas.toDataURL('image/jpeg',0.92);
+  let photo;
+  if(mkType==='main') photo=buildings[activeBldg].photos[mkPhotoIdx];
+  else if(mkType==='repair') photo=buildings[activeBldg].repairs[mkSubIdx].photos[mkPhotoIdx];
+  else if(mkType==='action') photo=buildings[activeBldg].actions[mkSubIdx].photos[mkPhotoIdx];
+  if(photo){photo.data=dataUrl;photo.url='';}
+  document.getElementById('markupOverlay').classList.remove('active');
+  renderBldgForm();markDirty();
+  toast('Markup saved','success');
+}
+
+function setMarkupTool(tool){mkTool=tool;document.querySelectorAll('.markup-tool[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));}
+function setMarkupColor(color){mkColor=color;document.querySelectorAll('.markup-color').forEach(b=>b.classList.toggle('active',b.dataset.color===color));}
+function setMarkupSize(size){mkSize=size;document.querySelectorAll('.markup-size').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.size)===size));}
+
+function undoMarkup(){
+  if(!mkHistory.length)return;
+  mkHistory.pop();
+  const src=mkHistory.length?mkHistory[mkHistory.length-1]:mkBaseData;
+  const img=new Image();
+  img.onload=()=>{mkCtx.clearRect(0,0,mkCanvas.width,mkCanvas.height);mkCtx.drawImage(img,0,0);};
+  img.src=src;
+}
+
+function mkSnapshot(){mkHistory.push(mkCanvas.toDataURL('image/png'));}
+
+function mkCoords(e){
+  const rect=mkCanvas.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return{x:t.clientX-rect.left,y:t.clientY-rect.top};
+}
+
+// Canvas events
+const mc=document.getElementById('markupCanvas');
+mc.addEventListener('mousedown',mkDown);mc.addEventListener('mousemove',mkMove);
+mc.addEventListener('mouseup',mkUp);mc.addEventListener('mouseleave',mkUp);
+mc.addEventListener('touchstart',mkDown,{passive:false});mc.addEventListener('touchmove',mkMove,{passive:false});
+mc.addEventListener('touchend',mkUp);mc.addEventListener('touchcancel',mkUp);
+
+let mkPath=[];
+
+function mkDown(e){
+  e.preventDefault();mkDrawing=true;
+  const p=mkCoords(e);mkStartX=p.x;mkStartY=p.y;
+  if(mkTool==='pen'){
+    mkPath=[p];mkCtx.beginPath();mkCtx.moveTo(p.x,p.y);
+    mkCtx.strokeStyle=mkColor;mkCtx.lineWidth=mkSize;mkCtx.lineCap='round';mkCtx.lineJoin='round';
+  } else {mkSnapshot();}
+}
+
+function mkMove(e){
+  if(!mkDrawing)return;e.preventDefault();
+  const p=mkCoords(e);
+  if(mkTool==='pen'){mkCtx.lineTo(p.x,p.y);mkCtx.stroke();mkPath.push(p);}
+  else{
+    const snap=mkHistory[mkHistory.length-1]||mkBaseData;
+    const img=new Image();
+    img.onload=()=>{mkCtx.clearRect(0,0,mkCanvas.width,mkCanvas.height);mkCtx.drawImage(img,0,0);drawShape(mkStartX,mkStartY,p.x,p.y);};
+    img.src=snap;
+  }
+}
+
+function mkUp(e){
+  if(!mkDrawing)return;mkDrawing=false;
+  if(mkTool==='pen'){mkCtx.closePath();mkSnapshot();}
+  else{mkHistory[mkHistory.length-1]=mkCanvas.toDataURL('image/png');}
+}
+
+function drawShape(x1,y1,x2,y2){
+  mkCtx.strokeStyle=mkColor;mkCtx.lineWidth=mkSize;mkCtx.lineCap='round';mkCtx.lineJoin='round';mkCtx.fillStyle=mkColor;
+  if(mkTool==='arrow'){
+    const angle=Math.atan2(y2-y1,x2-x1);const hl=Math.max(mkSize*4,16);
+    mkCtx.beginPath();mkCtx.moveTo(x1,y1);mkCtx.lineTo(x2,y2);mkCtx.stroke();
+    mkCtx.beginPath();mkCtx.moveTo(x2,y2);
+    mkCtx.lineTo(x2-hl*Math.cos(angle-0.4),y2-hl*Math.sin(angle-0.4));
+    mkCtx.lineTo(x2-hl*Math.cos(angle+0.4),y2-hl*Math.sin(angle+0.4));
+    mkCtx.closePath();mkCtx.fill();
+  } else if(mkTool==='circle'){
+    const rx=Math.abs(x2-x1)/2,ry=Math.abs(y2-y1)/2;
+    mkCtx.beginPath();mkCtx.ellipse(Math.min(x1,x2)+rx,Math.min(y1,y2)+ry,rx,ry,0,0,Math.PI*2);mkCtx.stroke();
+  } else if(mkTool==='rect'){
+    mkCtx.strokeRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));
+  }
 }
 </script>
 </body>
