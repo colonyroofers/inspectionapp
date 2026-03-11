@@ -1080,7 +1080,7 @@ function showReport(){
         <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px">${b.logDate||'Day '+(i+1)}</span><span style="font-size:12px;opacity:.8">${b.weather||''}</span></div>
         <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
           ${sections.map(([title,html])=>`<div style="margin-bottom:10px"><p style="font-weight:700;font-size:11px;color:#7B1FA2;text-transform:uppercase;letter-spacing:.3px;margin:0 0 4px">${title}</p>${html}</div>`).join('')}
-          ${b.photos.length?`<div style="margin-top:8px"><p style="font-weight:700;font-size:11px;color:#7B1FA2;text-transform:uppercase;letter-spacing:.3px;margin:0 0 6px">PROGRESS PHOTOS</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div></div>`:''}
+          ${b.photos.length?`<div style="margin-top:8px"><p style="font-weight:700;font-size:11px;color:#7B1FA2;text-transform:uppercase;letter-spacing:.3px;margin:0 0 6px">PROGRESS PHOTOS</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div></div>`:''}
         </div></div>`;
     }).join('');
   } else if(isCompletedRepair()){
@@ -1097,8 +1097,8 @@ function showReport(){
       return `<div style="margin-bottom:24px;page-break-inside:avoid">
         <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0"><span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span></div>
         <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
-          ${reps.length?`<p style="font-weight:700;color:#1565C0;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.3px">✅ Repairs Completed</p>`+reps.map((r,ri)=>`<div style="background:#f8f9fa;border:1px solid #eaecf0;border-left:3px solid #1565C0;border-radius:6px;padding:10px;margin-bottom:8px"><span style="font-weight:600;font-size:13px;color:#344054">Repair ${ri+1}</span><p style="margin:4px 0 6px;font-size:13px">${r.description}</p>${r.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${r.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div>`).join(''):''}
-          ${acts.length?`<p style="font-weight:700;color:#E65100;font-size:12px;margin:12px 0 8px;text-transform:uppercase;letter-spacing:.3px">⚠️ Recommended Actions</p>`+acts.map((a,ai)=>`<div style="background:#fff8f0;border:1px solid #eaecf0;border-left:3px solid #E65100;border-radius:6px;padding:10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-weight:600;font-size:13px;color:#344054">Action ${ai+1}</span>${rpbadge(a.priority)}</div><p style="margin:0 0 6px;font-size:13px">${a.description}</p>${a.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${a.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div>`).join(''):''}
+          ${reps.length?`<p style="font-weight:700;color:#1565C0;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.3px">✅ Repairs Completed</p>`+reps.map((r,ri)=>`<div style="background:#f8f9fa;border:1px solid #eaecf0;border-left:3px solid #1565C0;border-radius:6px;padding:10px;margin-bottom:8px"><span style="font-weight:600;font-size:13px;color:#344054">Repair ${ri+1}</span><p style="margin:4px 0 6px;font-size:13px">${r.description}</p>${r.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${r.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div>`).join(''):''}
+          ${acts.length?`<p style="font-weight:700;color:#E65100;font-size:12px;margin:12px 0 8px;text-transform:uppercase;letter-spacing:.3px">⚠️ Recommended Actions</p>`+acts.map((a,ai)=>`<div style="background:#fff8f0;border:1px solid #eaecf0;border-left:3px solid #E65100;border-radius:6px;padding:10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-weight:600;font-size:13px;color:#344054">Action ${ai+1}</span>${rpbadge(a.priority)}</div><p style="margin:0 0 6px;font-size:13px">${a.description}</p>${a.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${a.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div>`).join(''):''}
         </div></div>`;
     }).join('');
   } else if(isRepair()){
@@ -1124,13 +1124,13 @@ function showReport(){
                 ${rbadge}
               </div>
               <p style="margin:0 0 6px;font-size:13px">${r.description}</p>
-              ${r.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${r.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}
+              ${r.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${r.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}
             </div>`;}).join(''):''}
         </div></div>`;
     }).join('');
   } else {
     summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#f8f9fa"><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Priority</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Findings</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th></tr></thead><tbody>${buildings.map((b,i)=>`<tr style="background:${i%2===0?'#f9fafb':'#fff'}"><td style="padding:6px 8px;color:#667085">${i+1}</td><td style="padding:6px 8px">${badge(b.priority)}</td><td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td><td style="padding:6px 8px;color:#667085;text-align:center">${b.findings.filter(Boolean).length}</td><td style="padding:6px 8px;color:#667085;text-align:center">${b.photos.length}</td></tr>`).join('')}</tbody></table>`;
-    detailsHtml=buildings.map((b,i)=>{const fi=b.findings.filter(Boolean);return `<div style="margin-bottom:24px;page-break-inside:avoid"><div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span>${badge(b.priority)}</div><div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">${fi.length?`<p style="font-weight:600;color:#475467;margin:0 0 4px">Findings</p><ul style="margin:0 0 10px;padding-left:20px">${fi.map(f=>`<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`:''}${b.action?`<p style="font-weight:600;color:#475467;margin:10px 0 4px">Recommended Action</p><p style="margin:0 0 10px;padding-left:8px">${b.action}</p>`:''}${b.photos.length?`<p style="font-weight:600;color:#475467;margin:10px 0 8px">Photos (${b.photos.length})</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:160px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div></div>`;}).join('');
+    detailsHtml=buildings.map((b,i)=>{const fi=b.findings.filter(Boolean);return `<div style="margin-bottom:24px;page-break-inside:avoid"><div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span>${badge(b.priority)}</div><div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">${fi.length?`<p style="font-weight:600;color:#475467;margin:0 0 4px">Findings</p><ul style="margin:0 0 10px;padding-left:20px">${fi.map(f=>`<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`:''}${b.action?`<p style="font-weight:600;color:#475467;margin:10px 0 4px">Recommended Action</p><p style="margin:0 0 10px;padding-left:8px">${b.action}</p>`:''}${b.photos.length?`<p style="font-weight:600;color:#475467;margin:10px 0 8px">Photos (${b.photos.length})</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div></div>`;}).join('');
   }
 
   const notes=[['UNDERLAYMENT NOTES',d.underlaymentNotes],['TILE / MATERIAL ID',d.tileInfo],['GENERAL NOTES',d.generalNotes]].filter(([,val])=>val).map(([t,val])=>`<div style="margin-bottom:16px"><p style="background:#f8f9fa;padding:7px 10px;font-weight:700;font-size:11px;color:#1B2A4A;margin:0 0 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px">${t}</p><p style="margin:0 0 0 8px;font-size:12px">${val}</p></div>`).join('');
@@ -1275,25 +1275,38 @@ function openMarkup(type,photoIdx,subIdx){
   mkCanvas=document.getElementById('markupCanvas');
   mkCtx=mkCanvas.getContext('2d');
   mkHistory=[];
-  mkImg=new Image();
-  mkImg.crossOrigin='anonymous';
-  mkImg.onload=()=>{
-    // Wait a frame for the overlay to layout, then size canvas to fill the screen
-    requestAnimationFrame(()=>{
-      const wrap=mkCanvas.parentElement;
-      const maxW=wrap.clientWidth;
-      const maxH=wrap.clientHeight;
-      const scale=Math.min(maxW/mkImg.width,maxH/mkImg.height);
-      mkCanvas.width=Math.round(mkImg.width*scale);
-      mkCanvas.height=Math.round(mkImg.height*scale);
-      mkCtx.drawImage(mkImg,0,0,mkCanvas.width,mkCanvas.height);
-      mkBaseData=mkCanvas.toDataURL('image/jpeg',0.92);
-    });
-    document.getElementById('markupOverlay').classList.add('active');
-  };
-  mkImg.onerror=()=>{toast('Could not load photo for markup','error');};
-  mkImg.src=src;
   setMarkupTool('pen');setMarkupColor('#CC0000');setMarkupSize(5);
+
+  function loadToCanvas(imgSrc){
+    mkImg=new Image();
+    mkImg.onload=()=>{
+      requestAnimationFrame(()=>{
+        const wrap=mkCanvas.parentElement;
+        const maxW=wrap.clientWidth;
+        const maxH=wrap.clientHeight;
+        const scale=Math.min(maxW/mkImg.width,maxH/mkImg.height);
+        mkCanvas.width=Math.round(mkImg.width*scale);
+        mkCanvas.height=Math.round(mkImg.height*scale);
+        mkCtx.drawImage(mkImg,0,0,mkCanvas.width,mkCanvas.height);
+        mkBaseData=mkCanvas.toDataURL('image/jpeg',0.92);
+      });
+      document.getElementById('markupOverlay').classList.add('active');
+    };
+    mkImg.onerror=()=>{toast('Could not load photo for markup','error');};
+    mkImg.src=imgSrc;
+  }
+
+  // Data URLs load directly; remote URLs need fetch to avoid CORS canvas tainting
+  if(src.startsWith('data:')){
+    loadToCanvas(src);
+  } else {
+    fetch(src).then(r=>r.blob()).then(blob=>{
+      loadToCanvas(URL.createObjectURL(blob));
+    }).catch(()=>{
+      // Fallback: try direct load
+      loadToCanvas(src);
+    });
+  }
 }
 
 function cancelMarkup(){document.getElementById('markupOverlay').classList.remove('active');}
