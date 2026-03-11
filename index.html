@@ -125,6 +125,10 @@
   .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700}
   .type-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
   .save-bar{position:sticky;bottom:0;background:white;border-top:1px solid #EAECF0;padding:12px 0;margin-top:12px;z-index:100}
+  .auto-save-status{text-align:center;font-size:12px;color:#98A2B3;padding:0 0 8px;min-height:20px;transition:opacity .3s}
+  .auto-save-status.saving{color:#b38600}
+  .auto-save-status.saved{color:#2E7D32}
+  .auto-save-status.error{color:#C62828}
   /* Repair item card */
   .repair-card{background:#F8F9FA;border:1px solid #EAECF0;border-radius:10px;padding:16px;margin-bottom:12px}
   .repair-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -135,6 +139,29 @@
   .action-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
   .action-card-header h4{font-size:14px;color:#1B2A4A;margin:0;font-weight:700}
   .action-card-header button{background:none;border:none;color:#C62828;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline}
+  /* Team management */
+  .team-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .team-header h2{font-size:20px;color:#1B2A4A}
+  .team-member{background:white;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #EAECF0;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .team-member-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+  .team-member-avatar{width:36px;height:36px;border-radius:50%;background:#EAECF0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#475467;flex-shrink:0}
+  .team-member-details{min-width:0}
+  .team-member-name{font-size:14px;font-weight:600;color:#1B2A4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .team-member-email{font-size:12px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .team-member-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  .role-badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;border:none;font-family:inherit}
+  .role-admin{background:#1B2A4A;color:white}
+  .role-user{background:#F2F4F7;color:#667085}
+  .team-remove{background:none;border:none;color:#C62828;font-size:18px;cursor:pointer;padding:4px 8px}
+  .team-add-form{background:white;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #EAECF0;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .team-add-row{display:flex;gap:8px}
+  .team-add-row input{flex:1}
+  .team-add-row select{width:auto;min-width:110px}
+  .team-add-row button{white-space:nowrap}
+  .team-stats{display:flex;gap:16px;margin-bottom:16px}
+  .team-stat{background:white;border-radius:10px;padding:12px 16px;border:1px solid #EAECF0;flex:1;text-align:center}
+  .team-stat-num{font-size:22px;font-weight:800;color:#1B2A4A}
+  .team-stat-label{font-size:11px;color:#667085;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -166,7 +193,10 @@
   <div id="dashboard">
     <div class="dash-header">
       <h2>Inspections</h2>
-      <button class="btn btn-navy" style="width:auto;padding:10px 20px;font-size:14px" onclick="startNewInspection()">+ New</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-outline" id="teamBtn" style="display:none;width:auto;padding:10px 16px;font-size:14px" onclick="openTeamPanel()">👥 Team</button>
+        <button class="btn btn-navy" style="width:auto;padding:10px 20px;font-size:14px" onclick="startNewInspection()">+ New</button>
+      </div>
     </div>
     <div class="admin-toggle" id="adminToggle" style="display:none">
       <label><input type="checkbox" id="showAllToggle" onchange="loadInspections()"> Show all team inspections</label>
@@ -178,6 +208,30 @@
       <button class="dash-filter" onclick="setFilter('archived',this)">Archived</button>
     </div>
     <div id="dashList"></div>
+  </div>
+
+  <!-- TEAM MANAGEMENT (admin only) -->
+  <div id="teamPanel" style="display:none">
+    <div style="margin-bottom:16px">
+      <button class="btn btn-outline" style="width:auto;padding:8px 16px;font-size:13px" onclick="closeTeamPanel()">← Back to Inspections</button>
+    </div>
+    <div class="team-header">
+      <h2>Team Management</h2>
+    </div>
+    <div class="team-stats" id="teamStats"></div>
+    <div class="team-add-form">
+      <label class="lbl" style="margin-bottom:8px">Add Team Member</label>
+      <div class="team-add-row">
+        <input id="teamAddEmail" type="email" placeholder="email@example.com" style="font-size:14px;padding:10px 12px">
+        <select id="teamAddRole" style="font-size:14px;padding:10px 8px">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button class="btn btn-navy" style="width:auto;padding:10px 16px;font-size:14px" onclick="addTeamMember()">Add</button>
+      </div>
+      <div id="teamAddError" style="display:none;background:#FEE4E2;color:#C62828;padding:8px 12px;border-radius:6px;font-size:13px;margin-top:8px"></div>
+    </div>
+    <div id="teamList"></div>
   </div>
 
   <div id="inspectionForm" style="display:none">
@@ -277,6 +331,7 @@
     </div>
 
     <div class="save-bar">
+      <div id="autoSaveStatus" class="auto-save-status"></div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="saveInspection('draft')">💾 Save Draft</button>
         <button class="btn btn-green" onclick="saveInspection('completed')">✓ Save & Complete</button>
@@ -330,14 +385,41 @@ function newRepairItem(){ return {description:'',priority:'medium',photos:[]}; }
 function isRepair(){ return inspectionType==='repair'; }
 
 // ═══════ AUTH ═══════
+// Bootstrap admin — first admin is auto-provisioned if team collection is empty
+const BOOTSTRAP_ADMIN='zach@colonyroofers.com';
+
 auth.onAuthStateChanged(async user=>{
   if(user){
     currentUser=user;
-    try{const d=await db.collection('config').doc('admins').get();if(d.exists)isAdmin=(d.data().emails||[]).includes(user.email);}catch(e){}
+    isAdmin=false;
+    try{
+      // Check team collection for this user's role
+      const teamDoc=await db.collection('team').doc(user.email.toLowerCase()).get();
+      if(teamDoc.exists){
+        isAdmin=teamDoc.data().role==='admin';
+      } else {
+        // Check if team collection is empty (first-time setup)
+        const teamSnap=await db.collection('team').limit(1).get();
+        if(teamSnap.empty){
+          // Bootstrap: first user + bootstrap admin both get admin
+          await db.collection('team').doc(user.email.toLowerCase()).set({
+            email:user.email.toLowerCase(),name:user.displayName||'',role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
+          });
+          isAdmin=true;
+          // Also add bootstrap admin if different from current user
+          if(user.email.toLowerCase()!==BOOTSTRAP_ADMIN.toLowerCase()){
+            await db.collection('team').doc(BOOTSTRAP_ADMIN.toLowerCase()).set({
+              email:BOOTSTRAP_ADMIN.toLowerCase(),name:'Zach Reece',role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        }
+        // If team exists but user isn't in it, they're a regular user (not on team)
+      }
+    }catch(e){console.error('Team check error:',e);}
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainApp').style.display='';
     document.getElementById('userPill').innerHTML=`<img src="${user.photoURL||''}" alt="" onerror="this.style.display='none'"><span>${user.displayName||user.email}</span>${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}<button onclick="signOut()">Sign out</button>`;
-    if(isAdmin)document.getElementById('adminToggle').style.display='';
+    if(isAdmin){document.getElementById('adminToggle').style.display='';document.getElementById('teamBtn').style.display='';}
     loadInspections();
   }else{currentUser=null;isAdmin=false;document.getElementById('loginScreen').style.display='';document.getElementById('mainApp').style.display='none';}
 });
@@ -409,7 +491,7 @@ async function loadInspections(){
         :`<button class="archive-btn" onclick="event.stopPropagation();archiveInspection('${id}','${esc(d.propertyName||'Untitled')}')">Archive</button>`;
       list.innerHTML+=`<div class="dash-item" onclick="openInspection('${id}')" ${isArchived?'style="opacity:.7"':''}>
         <div class="dash-item-top">
-          <div><h4>${d.propertyName||'Untitled'}</h4><div class="dash-item-meta">${[d.market,date,bc+' bldg'+(bc!==1?'s':'')].filter(Boolean).join(' · ')}</div>${sa?`<div class="dash-item-owner">${d.userName||d.inspectorName||d.userEmail||'Unknown'}</div>`:''}</div>
+          <div><h4>${d.propertyName||'Untitled'}</h4><div class="dash-item-meta">${[d.market,date,bc+' bldg'+(bc!==1?'s':'')].filter(Boolean).join(' · ')}</div>${isAdmin?`<div class="dash-item-owner">${d.userName||d.inspectorName||d.userEmail||'Unknown'}</div>`:''}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <div class="dash-item-badges"><span class="type-badge-sm" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="status-badge status-${d.status||'draft'}">${d.status||'draft'}</span></div>
             ${archiveBtn}
@@ -439,6 +521,7 @@ async function unarchiveInspection(docId){
 
 // ═══════ NEW / OPEN ═══════
 function startNewInspection(){
+  clearAutoSave();isDirty=false;updateAutoSaveStatus('');
   currentDocId=null;inspectionType='';buildings=[newBuilding()];activeBldg=0;
   ['propertyName','propertyAddress','totalBuildings','inspectorName','reportNumber','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('inspectionDate').value=new Date().toISOString().split('T')[0];
@@ -468,42 +551,89 @@ async function openInspection(docId){
       actions:(b.actions||[{description:'',photos:[]}]).map(a=>({description:a.description||'',photos:(a.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))}))
     }));
     if(!buildings.length)buildings=[newBuilding()];
-    activeBldg=0;showForm();goStep(0);hideSaving();
+    activeBldg=0;showForm();goStep(0);hideSaving();isDirty=false;clearAutoSave();updateAutoSaveStatus('');
   }catch(e){hideSaving();toast('Error: '+e.message,'error');}
 }
-function showForm(){document.getElementById('dashboard').style.display='none';document.getElementById('inspectionForm').style.display='';}
-function backToDash(){document.getElementById('inspectionForm').style.display='none';document.getElementById('dashboard').style.display='';loadInspections();}
+function showForm(){document.getElementById('dashboard').style.display='none';document.getElementById('teamPanel').style.display='none';document.getElementById('inspectionForm').style.display='';}
+function backToDash(){clearAutoSave();isDirty=false;document.getElementById('inspectionForm').style.display='none';document.getElementById('teamPanel').style.display='none';document.getElementById('dashboard').style.display='';loadInspections();}
 
 // ═══════ SAVE ═══════
 async function saveInspection(status){
-  if(!currentUser)return;showSaving('Saving inspection...');
+  if(!currentUser)return;
+  clearAutoSave(); // Cancel any pending auto-save
+  isAutoSaving=false;
+  showSaving('Saving inspection...');
   try{
+    await doSave(status);
+    hideSaving();toast(status==='completed'?'Inspection saved & completed!':'Draft saved!','success');backToDash();
+  }catch(e){hideSaving();toast('Save failed: '+e.message,'error');}
+}
+
+// ═══════ AUTO-SAVE ═══════
+let autoSaveTimer=null,isAutoSaving=false,isDirty=false,AUTO_SAVE_DELAY=30000;
+
+function markDirty(){
+  if(!document.getElementById('inspectionForm').offsetParent) return; // form not visible
+  isDirty=true;
+  clearAutoSave();
+  autoSaveTimer=setTimeout(()=>triggerAutoSave(),AUTO_SAVE_DELAY);
+  updateAutoSaveStatus('');
+}
+
+function clearAutoSave(){if(autoSaveTimer){clearTimeout(autoSaveTimer);autoSaveTimer=null;}}
+
+async function triggerAutoSave(){
+  if(!currentUser||!isDirty||isAutoSaving)return;
+  // Don't auto-save if no inspection type selected yet
+  if(!inspectionType)return;
+  isAutoSaving=true;
+  updateAutoSaveStatus('saving');
+  try{
+    await doSave('draft');
+    isDirty=false;
+    updateAutoSaveStatus('saved');
+  }catch(e){
+    console.error('Auto-save failed:',e);
+    updateAutoSaveStatus('error');
+  }
+  isAutoSaving=false;
+}
+
+function updateAutoSaveStatus(state){
+  const el=document.getElementById('autoSaveStatus');
+  if(!el)return;
+  el.className='auto-save-status';
+  if(state==='saving'){el.className+=' saving';el.textContent='Saving...';}
+  else if(state==='saved'){el.className+=' saved';el.textContent='✓ Saved just now';setTimeout(()=>{if(el.textContent==='✓ Saved just now')el.textContent='';},5000);}
+  else if(state==='error'){el.className+=' error';el.textContent='Auto-save failed';}
+  else{el.textContent='';}
+}
+
+// Core save logic shared by manual save and auto-save
+async function doSave(status){
     const savedBuildings=[];
     for(let bi=0;bi<buildings.length;bi++){
       const b=buildings[bi];
-      // Upload main photos (replacement/DD)
       const mainPhotos=[];
       for(const ph of b.photos){
         if(ph.url){mainPhotos.push({url:ph.url,caption:ph.caption||''});}
         else if(ph.data&&ph.data.startsWith('data:')){const ref=storage.ref(`inspections/${currentDocId||'t_'+Date.now()}/b${bi}_mp_${Date.now()}_${Math.random().toString(36).slice(2,6)}`);await ref.putString(ph.data,'data_url');const url=await ref.getDownloadURL();mainPhotos.push({url,caption:ph.caption||''});ph.url=url;}
       }
-      // Upload repair photos
       const savedRepairs=[];
       for(let ri=0;ri<b.repairs.length;ri++){
         const rep=b.repairs[ri];const repPhotos=[];
         for(const ph of rep.photos){
           if(ph.url){repPhotos.push({url:ph.url,caption:ph.caption||''});}
-          else if(ph.data&&ph.data.startsWith('data:')){showSaving('Uploading photo...');const ref=storage.ref(`inspections/${currentDocId||'t_'+Date.now()}/b${bi}_r${ri}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`);await ref.putString(ph.data,'data_url');const url=await ref.getDownloadURL();repPhotos.push({url,caption:ph.caption||''});ph.url=url;}
+          else if(ph.data&&ph.data.startsWith('data:')){const ref=storage.ref(`inspections/${currentDocId||'t_'+Date.now()}/b${bi}_r${ri}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`);await ref.putString(ph.data,'data_url');const url=await ref.getDownloadURL();repPhotos.push({url,caption:ph.caption||''});ph.url=url;}
         }
         savedRepairs.push({description:rep.description,priority:rep.priority,photos:repPhotos});
       }
-      // Upload action photos
       const savedActions=[];
       for(let ai=0;ai<b.actions.length;ai++){
         const act=b.actions[ai];const actPhotos=[];
         for(const ph of act.photos){
           if(ph.url){actPhotos.push({url:ph.url,caption:ph.caption||''});}
-          else if(ph.data&&ph.data.startsWith('data:')){showSaving('Uploading photo...');const ref=storage.ref(`inspections/${currentDocId||'t_'+Date.now()}/b${bi}_a${ai}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`);await ref.putString(ph.data,'data_url');const url=await ref.getDownloadURL();actPhotos.push({url,caption:ph.caption||''});ph.url=url;}
+          else if(ph.data&&ph.data.startsWith('data:')){const ref=storage.ref(`inspections/${currentDocId||'t_'+Date.now()}/b${bi}_a${ai}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`);await ref.putString(ph.data,'data_url');const url=await ref.getDownloadURL();actPhotos.push({url,caption:ph.caption||''});ph.url=url;}
         }
         savedActions.push({description:act.description,photos:actPhotos});
       }
@@ -512,9 +642,13 @@ async function saveInspection(status){
     const data={inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:v('reportNumber'),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes'),buildings:savedBuildings,status,userId:currentUser.uid,userEmail:currentUser.email,userName:currentUser.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     if(currentDocId){await db.collection('inspections').doc(currentDocId).update(data);}
     else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();const ref=await db.collection('inspections').add(data);currentDocId=ref.id;}
-    hideSaving();toast(status==='completed'?'Inspection saved & completed!':'Draft saved!','success');backToDash();
-  }catch(e){hideSaving();toast('Save failed: '+e.message,'error');}
 }
+
+// Listen for changes on the inspection form to trigger auto-save
+document.getElementById('inspectionForm').addEventListener('input',()=>markDirty());
+document.getElementById('inspectionForm').addEventListener('change',()=>markDirty());
+// Warn before closing with unsaved changes
+window.addEventListener('beforeunload',e=>{if(isDirty){e.preventDefault();e.returnValue='';}});
 
 // ═══════ HELPERS ═══════
 function showSaving(m){document.getElementById('savingText').textContent=m||'Saving...';document.getElementById('savingOverlay').style.display='flex';}
@@ -524,11 +658,11 @@ function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function v(id){const el=document.getElementById(id);return el?el.value:'';}
 
 // ═══════ TYPE ═══════
-function selectType(type){inspectionType=type;document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));document.getElementById('type-'+type).classList.add('selected');document.getElementById('typeNextBtn').disabled=false;}
+function selectType(type){inspectionType=type;document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));document.getElementById('type-'+type).classList.add('selected');document.getElementById('typeNextBtn').disabled=false;markDirty();}
 
 // ═══════ NAVIGATION ═══════
 let currentStep=0;
-function goStep(n){if(n>0&&!inspectionType)return;document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));document.getElementById('tabBar').style.display='';document.getElementById('step'+n).classList.add('active');currentStep=n;if(n===2){syncBuildingsToCount();renderBldgTabs();}}
+function goStep(n){if(n>0&&!inspectionType)return;document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));document.getElementById('tabBar').style.display='';document.getElementById('step'+n).classList.add('active');currentStep=n;if(n===2){syncBuildingsToCount();renderBldgTabs();}if(isDirty){clearAutoSave();triggerAutoSave();}}
 // ── Bug fix: auto-generate buildings from totalBuildings input ──
 function syncBuildingsToCount(){
   const target=parseInt(document.getElementById('totalBuildings').value)||0;
@@ -654,32 +788,32 @@ function renderActionCard(a, ai){
 }
 
 // ── Repair functions ──
-function addRepair(){buildings[activeBldg].repairs.push(newRepairItem());renderBldgForm();}
-function removeRepair(i){buildings[activeBldg].repairs.splice(i,1);renderBldgForm();}
-function setRepairPriority(ri,p){buildings[activeBldg].repairs[ri].priority=p;renderBldgForm();}
+function addRepair(){buildings[activeBldg].repairs.push(newRepairItem());renderBldgForm();markDirty();}
+function removeRepair(i){buildings[activeBldg].repairs.splice(i,1);renderBldgForm();markDirty();}
+function setRepairPriority(ri,p){buildings[activeBldg].repairs[ri].priority=p;renderBldgForm();markDirty();}
 function addRepairPhotos(ri,input){
   const files=Array.from(input.files);let loaded=0;
-  files.forEach(file=>{const r=new FileReader();r.onload=e=>{buildings[activeBldg].repairs[ri].photos.push({data:e.target.result,caption:'',url:''});loaded++;if(loaded===files.length)renderBldgForm();};r.readAsDataURL(file);});input.value='';
+  files.forEach(file=>{const r=new FileReader();r.onload=e=>{buildings[activeBldg].repairs[ri].photos.push({data:e.target.result,caption:'',url:''});loaded++;if(loaded===files.length){renderBldgForm();markDirty();}};r.readAsDataURL(file);});input.value='';
 }
-function removeRepairPhoto(ri,pi){buildings[activeBldg].repairs[ri].photos.splice(pi,1);renderBldgForm();}
+function removeRepairPhoto(ri,pi){buildings[activeBldg].repairs[ri].photos.splice(pi,1);renderBldgForm();markDirty();}
 
 // ── Action functions ──
-function addAction(){buildings[activeBldg].actions.push({description:'',photos:[]});renderBldgForm();}
-function removeAction(i){buildings[activeBldg].actions.splice(i,1);renderBldgForm();}
+function addAction(){buildings[activeBldg].actions.push({description:'',photos:[]});renderBldgForm();markDirty();}
+function removeAction(i){buildings[activeBldg].actions.splice(i,1);renderBldgForm();markDirty();}
 function addActionPhotos(ai,input){
   const files=Array.from(input.files);let loaded=0;
-  files.forEach(file=>{const r=new FileReader();r.onload=e=>{buildings[activeBldg].actions[ai].photos.push({data:e.target.result,caption:'',url:''});loaded++;if(loaded===files.length)renderBldgForm();};r.readAsDataURL(file);});input.value='';
+  files.forEach(file=>{const r=new FileReader();r.onload=e=>{buildings[activeBldg].actions[ai].photos.push({data:e.target.result,caption:'',url:''});loaded++;if(loaded===files.length){renderBldgForm();markDirty();}};r.readAsDataURL(file);});input.value='';
 }
-function removeActionPhoto(ai,pi){buildings[activeBldg].actions[ai].photos.splice(pi,1);renderBldgForm();}
+function removeActionPhoto(ai,pi){buildings[activeBldg].actions[ai].photos.splice(pi,1);renderBldgForm();markDirty();}
 
 // ── Replacement/DD functions ──
-function setPriority(p){buildings[activeBldg].priority=p;renderBldgTabs();renderBldgForm();}
-function addFinding(){buildings[activeBldg].findings.push('');renderBldgForm();}
-function removeFinding(i){buildings[activeBldg].findings.splice(i,1);renderBldgForm();}
-function addPhotos(input){const files=Array.from(input.files);let loaded=0;files.forEach(file=>{const r=new FileReader();r.onload=e=>{buildings[activeBldg].photos.push({data:e.target.result,caption:'',url:''});loaded++;if(loaded===files.length)renderBldgForm();};r.readAsDataURL(file);});input.value='';}
-function removePhoto(i){buildings[activeBldg].photos.splice(i,1);renderBldgForm();}
-function removeBldg(){buildings.splice(activeBldg,1);activeBldg=Math.max(0,activeBldg-1);renderBldgTabs();}
-function moveBldg(dir){const ni=activeBldg+dir;if(ni<0||ni>=buildings.length)return;[buildings[activeBldg],buildings[ni]]=[buildings[ni],buildings[activeBldg]];activeBldg=ni;renderBldgTabs();}
+function setPriority(p){buildings[activeBldg].priority=p;renderBldgTabs();renderBldgForm();markDirty();}
+function addFinding(){buildings[activeBldg].findings.push('');renderBldgForm();markDirty();}
+function removeFinding(i){buildings[activeBldg].findings.splice(i,1);renderBldgForm();markDirty();}
+function addPhotos(input){const files=Array.from(input.files);let loaded=0;files.forEach(file=>{const r=new FileReader();r.onload=e=>{buildings[activeBldg].photos.push({data:e.target.result,caption:'',url:''});loaded++;if(loaded===files.length){renderBldgForm();markDirty();}};r.readAsDataURL(file);});input.value='';}
+function removePhoto(i){buildings[activeBldg].photos.splice(i,1);renderBldgForm();markDirty();}
+function removeBldg(){buildings.splice(activeBldg,1);activeBldg=Math.max(0,activeBldg-1);renderBldgTabs();markDirty();}
+function moveBldg(dir){const ni=activeBldg+dir;if(ni<0||ni>=buildings.length)return;[buildings[activeBldg],buildings[ni]]=[buildings[ni],buildings[activeBldg]];activeBldg=ni;renderBldgTabs();markDirty();}
 
 // ═══════ PREVIEW ═══════
 function renderPreview(){
@@ -759,6 +893,100 @@ function showReport(){
   document.getElementById('reportOverlay').scrollTop=0;
 }
 function closeReport(){document.getElementById('reportOverlay').style.display='none';}
+
+// ═══════ TEAM MANAGEMENT ═══════
+function openTeamPanel(){
+  if(!isAdmin)return;
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('teamPanel').style.display='';
+  loadTeamMembers();
+}
+function closeTeamPanel(){
+  document.getElementById('teamPanel').style.display='none';
+  document.getElementById('dashboard').style.display='';
+}
+
+async function loadTeamMembers(){
+  const list=document.getElementById('teamList');
+  const stats=document.getElementById('teamStats');
+  list.innerHTML='<div style="text-align:center;padding:20px;color:#98A2B3">Loading team...</div>';
+  try{
+    const snap=await db.collection('team').orderBy('addedAt','desc').get();
+    let members=[];
+    snap.forEach(doc=>members.push({id:doc.id,...doc.data()}));
+    const admins=members.filter(m=>m.role==='admin').length;
+    const users=members.length-admins;
+    stats.innerHTML=`<div class="team-stat"><div class="team-stat-num">${members.length}</div><div class="team-stat-label">Total</div></div><div class="team-stat"><div class="team-stat-num">${admins}</div><div class="team-stat-label">Admins</div></div><div class="team-stat"><div class="team-stat-num">${users}</div><div class="team-stat-label">Users</div></div>`;
+    if(!members.length){list.innerHTML='<div style="text-align:center;padding:30px;color:#98A2B3">No team members yet</div>';return;}
+    list.innerHTML='';
+    members.forEach(m=>{
+      const initials=(m.name||m.email||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+      const isSelf=currentUser&&m.email===currentUser.email.toLowerCase();
+      const isOnlyAdmin=m.role==='admin'&&admins===1;
+      list.innerHTML+=`<div class="team-member">
+        <div class="team-member-info">
+          <div class="team-member-avatar">${initials}</div>
+          <div class="team-member-details">
+            <div class="team-member-name">${esc(m.name||'No name')}${isSelf?' (you)':''}</div>
+            <div class="team-member-email">${esc(m.email)}</div>
+          </div>
+        </div>
+        <div class="team-member-actions">
+          <button class="role-badge ${m.role==='admin'?'role-admin':'role-user'}" onclick="toggleRole('${esc(m.email)}','${m.role}')" ${isOnlyAdmin?'disabled style="opacity:.5;cursor:not-allowed"':''}>${m.role==='admin'?'Admin':'User'}</button>
+          ${!isOnlyAdmin&&!isSelf?`<button class="team-remove" onclick="removeTeamMember('${esc(m.email)}','${esc(m.name||m.email)}')">×</button>`:''}
+        </div>
+      </div>`;
+    });
+  }catch(e){list.innerHTML=`<div style="text-align:center;padding:20px;color:#C62828">Error: ${e.message}</div>`;}
+}
+
+async function addTeamMember(){
+  const emailInput=document.getElementById('teamAddEmail');
+  const roleInput=document.getElementById('teamAddRole');
+  const errEl=document.getElementById('teamAddError');
+  const email=emailInput.value.trim().toLowerCase();
+  errEl.style.display='none';
+  if(!email||!email.includes('@')){errEl.textContent='Please enter a valid email address.';errEl.style.display='block';return;}
+  try{
+    // Check if already exists
+    const existing=await db.collection('team').doc(email).get();
+    if(existing.exists){errEl.textContent='This email is already on the team.';errEl.style.display='block';return;}
+    await db.collection('team').doc(email).set({
+      email:email,name:'',role:roleInput.value,addedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    emailInput.value='';roleInput.value='user';
+    toast('Team member added!','success');
+    loadTeamMembers();
+  }catch(e){errEl.textContent='Failed to add: '+e.message;errEl.style.display='block';}
+}
+
+async function toggleRole(email,currentRole){
+  const newRole=currentRole==='admin'?'user':'admin';
+  // Prevent removing the last admin
+  if(currentRole==='admin'){
+    const snap=await db.collection('team').where('role','==','admin').get();
+    if(snap.size<=1){toast('Cannot remove the last admin','error');return;}
+  }
+  try{
+    await db.collection('team').doc(email).update({role:newRole});
+    toast(`${email} is now ${newRole==='admin'?'an Admin':'a User'}`,'success');
+    loadTeamMembers();
+    // If we changed our own role, update the local state
+    if(currentUser&&email===currentUser.email.toLowerCase()){
+      isAdmin=newRole==='admin';
+      document.getElementById('userPill').innerHTML=`<img src="${currentUser.photoURL||''}" alt="" onerror="this.style.display='none'"><span>${currentUser.displayName||currentUser.email}</span>${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}<button onclick="signOut()">Sign out</button>`;
+    }
+  }catch(e){toast('Failed: '+e.message,'error');}
+}
+
+async function removeTeamMember(email,name){
+  if(!confirm(`Remove ${name} from the team?`))return;
+  try{
+    await db.collection('team').doc(email).delete();
+    toast(`${name} removed from team`,'success');
+    loadTeamMembers();
+  }catch(e){toast('Failed: '+e.message,'error');}
+}
 </script>
 </body>
 </html>
