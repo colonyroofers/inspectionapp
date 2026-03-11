@@ -340,7 +340,19 @@ auth.onAuthStateChanged(async user=>{
     loadInspections();
   }else{currentUser=null;isAdmin=false;document.getElementById('loginScreen').style.display='';document.getElementById('mainApp').style.display='none';}
 });
-function signIn(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{const el=document.getElementById('loginError');el.textContent=e.message;el.style.display='block';});}
+function signIn(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  // Mobile/in-app browsers can't handle popups — use redirect instead
+  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(isMobile){auth.signInWithRedirect(provider);}
+  else{auth.signInWithPopup(provider).catch(e=>{
+    // If popup blocked, fall back to redirect
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'){auth.signInWithRedirect(provider);}
+    else{const el=document.getElementById('loginError');el.textContent=e.message;el.style.display='block';}
+  });}
+}
+// Handle redirect result on page load (for mobile sign-in flow)
+auth.getRedirectResult().catch(e=>{if(e.code&&e.code!=='auth/no-auth-event'){const el=document.getElementById('loginError');if(el){el.textContent=e.message;el.style.display='block';}}});
 function signOut(){auth.signOut();}
 
 // ═══════ DASHBOARD ═══════
