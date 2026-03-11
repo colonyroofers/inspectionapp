@@ -490,7 +490,21 @@ function selectType(type){inspectionType=type;document.querySelectorAll('.type-c
 
 // ═══════ NAVIGATION ═══════
 let currentStep=0;
-function goStep(n){if(n>0&&!inspectionType)return;document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));document.getElementById('tabBar').style.display='';document.getElementById('step'+n).classList.add('active');currentStep=n;if(n===2)renderBldgTabs();}
+function goStep(n){if(n>0&&!inspectionType)return;document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));document.getElementById('tabBar').style.display='';document.getElementById('step'+n).classList.add('active');currentStep=n;if(n===2){syncBuildingsToCount();renderBldgTabs();}}
+// ── Bug fix: auto-generate buildings from totalBuildings input ──
+function syncBuildingsToCount(){
+  const target=parseInt(document.getElementById('totalBuildings').value)||0;
+  if(target>0&&target!==buildings.length){
+    // Only sync if user hasn't customized buildings yet (all names empty and no data entered)
+    const isUntouched=buildings.length===1&&!buildings[0].name&&buildings[0].findings.join('')===''&&buildings[0].photos.length===0&&buildings[0].repairs.length===1&&!buildings[0].repairs[0].description&&buildings[0].repairs[0].photos.length===0;
+    if(isUntouched||buildings.length<target){
+      // If untouched (fresh start), reset to exact count; otherwise just add to reach target
+      if(isUntouched&&target>1){buildings=[];for(let i=0;i<target;i++)buildings.push(newBuilding());}
+      else{while(buildings.length<target)buildings.push(newBuilding());}
+      activeBldg=Math.min(activeBldg,buildings.length-1);
+    }
+  }
+}
 function showPreview(){document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.getElementById('tabBar').style.display='none';document.getElementById('stepPreview').classList.add('active');renderPreview();}
 function hidePreview(){document.getElementById('tabBar').style.display='';goStep(3);}
 
@@ -509,11 +523,21 @@ function renderBldgTabs(){
   add.onclick=()=>{buildings.push(newBuilding());activeBldg=buildings.length-1;renderBldgTabs();renderBldgForm();};
   ct.appendChild(add);renderBldgForm();
 }
+// ── Lightweight tab label update (no form re-render, preserves keyboard focus) ──
+function updateBldgTabLabels(){
+  const tabs=document.getElementById('bldgTabs').querySelectorAll('.bldg-tab');
+  buildings.forEach((b,i)=>{
+    if(tabs[i]){
+      if(isRepair()){tabs[i].textContent=b.name||'Bldg '+(i+1);}
+      else{tabs[i].innerHTML=`<span class="dot" style="background:${P[b.priority].color}"></span>${b.name||'Bldg '+(i+1)}`;}
+    }
+  });
+}
 
 function renderBldgForm(){
   const b=buildings[activeBldg],form=document.getElementById('bldgForm');
   const moveRow=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0">Building ${activeBldg+1} of ${buildings.length}</h3><div class="bldg-move"><button onclick="moveBldg(-1)" ${activeBldg===0?'disabled style="opacity:.3"':''}>↑</button><button onclick="moveBldg(1)" ${activeBldg===buildings.length-1?'disabled style="opacity:.3"':''}>↓</button></div></div>`;
-  const nameField=`<div class="field"><label class="lbl">Building Name / ID</label><input id="bName" value="${esc(b.name)}" placeholder="e.g. Building 100" oninput="buildings[activeBldg].name=this.value;renderBldgTabs()"></div>`;
+  const nameField=`<div class="field"><label class="lbl">Building Name / ID</label><input id="bName" value="${esc(b.name)}" placeholder="e.g. Building 100" oninput="buildings[activeBldg].name=this.value;updateBldgTabLabels()"></div>`;
   const removeBtn=buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Building</button>`:'';
 
   if(isRepair()){
