@@ -124,8 +124,8 @@
   .markup-overlay.active{display:flex}
   .markup-topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#111;flex-shrink:0}
   .markup-topbar button{border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
-  .markup-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-  .markup-canvas-wrap canvas{max-width:100%;max-height:100%;touch-action:none}
+  .markup-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;min-height:0}
+  .markup-canvas-wrap canvas{display:block;touch-action:none}
   .markup-toolbar{display:flex;gap:6px;padding:10px 12px;background:#111;flex-shrink:0;flex-wrap:wrap;justify-content:center;align-items:center}
   .markup-tool{width:40px;height:40px;border-radius:8px;border:2px solid transparent;background:#333;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
   .markup-tool.active{border-color:#CC0000;background:#444}
@@ -259,13 +259,13 @@
     <div class="tabs" id="tabBar">
       <div class="tab active" onclick="goStep(0)">Type</div>
       <div class="tab" onclick="goStep(1)">Property</div>
-      <div class="tab" onclick="goStep(2)">Buildings</div>
+      <div class="tab" onclick="goStep(2)" id="tabStep2">Buildings</div>
       <div class="tab" onclick="goStep(3)">Notes</div>
     </div>
 
     <div class="step active" id="step0">
       <div class="card">
-        <h3>Select Inspection Type</h3>
+        <h3>Select Type</h3>
         <div class="type-grid">
           <div class="type-card" onclick="selectType('repair')" id="type-repair">
             <div class="type-icon" style="background:#FFF3E0;color:#E65100">🔧</div>
@@ -281,6 +281,16 @@
             <div class="type-icon" style="background:#E8F5E9;color:#2E7D32">📋</div>
             <h4>Due Diligence</h4>
             <p>Pre-acquisition or lease assessment documenting overall roof condition, remaining life, and capital needs.</p>
+          </div>
+          <div class="type-card" onclick="selectType('completed-repair')" id="type-completed-repair">
+            <div class="type-icon" style="background:#E3F2FD;color:#1565C0">✅</div>
+            <h4>Completed Repair</h4>
+            <p>Document repairs that have been completed, with photos of the work done and any additional issues found.</p>
+          </div>
+          <div class="type-card" onclick="selectType('daily-log')" id="type-daily-log">
+            <div class="type-icon" style="background:#F3E5F5;color:#7B1FA2">📝</div>
+            <h4>Daily Log</h4>
+            <p>Daily project log for superintendents — track crews, work completed, materials, delays, and progress photos.</p>
           </div>
         </div>
       </div>
@@ -414,7 +424,7 @@ const auth=firebase.auth(),db=firebase.firestore(),storage=firebase.storage();
 
 const P={P1:{label:"P1 – Critical",color:"#C62828",bg:"#FFEBEE"},P2:{label:"P2 – High",color:"#E65100",bg:"#FFF3E0"},P3:{label:"P3 – Moderate",color:"#b38600",bg:"#FFFDE7"},P4:{label:"P4 – Monitor",color:"#2E7D32",bg:"#E8F5E9"}};
 const RP={urgent:{label:"Urgent",color:"#C62828",bg:"#FFEBEE"},high:{label:"High",color:"#E65100",bg:"#FFF3E0"},medium:{label:"Medium",color:"#b38600",bg:"#FFFDE7"},low:{label:"Low",color:"#2E7D32",bg:"#E8F5E9"}};
-const TYPES={'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},'replacement':{label:'Roof Replacement',color:'#C62828',bg:'#FFEBEE'},'due-diligence':{label:'Due Diligence',color:'#2E7D32',bg:'#E8F5E9'}};
+const TYPES={'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},'replacement':{label:'Roof Replacement',color:'#C62828',bg:'#FFEBEE'},'due-diligence':{label:'Due Diligence',color:'#2E7D32',bg:'#E8F5E9'},'completed-repair':{label:'Completed Repair',color:'#1565C0',bg:'#E3F2FD'},'daily-log':{label:'Daily Log',color:'#7B1FA2',bg:'#F3E5F5'}};
 
 let currentUser=null,isAdmin=false,inspectionType='',activeBldg=0,currentDocId=null,dashFilter='all',currentTeamName='';
 let buildings=[newBuilding()];
@@ -426,11 +436,18 @@ function newBuilding(){
     priority:'P2', findings:[''], action:'', photos:[],
     // Repair: each repair has description, priority, photos
     repairs:[newRepairItem()],
-    actions:[{description:'',photos:[]}]
+    actions:[{description:'',priority:'medium',photos:[]}],
+    // Daily Log fields
+    logDate:new Date().toISOString().split('T')[0],
+    weather:'',crews:[{subName:'',headcount:''}],
+    workCompleted:'',materialsDelivered:'',
+    safetyIncidents:'',delays:''
   };
 }
 function newRepairItem(){ return {description:'',priority:'medium',photos:[]}; }
 function isRepair(){ return inspectionType==='repair'; }
+function isCompletedRepair(){ return inspectionType==='completed-repair'; }
+function isDailyLog(){ return inspectionType==='daily-log'; }
 
 // ═══════ AUTH ═══════
 // Bootstrap admin — first admin is auto-provisioned if team collection is empty
@@ -547,7 +564,7 @@ async function loadInspections(){
         :`<button class="archive-btn" onclick="event.stopPropagation();archiveInspection('${id}','${esc(d.propertyName||'Untitled')}')">Archive</button>`;
       list.innerHTML+=`<div class="dash-item" onclick="openInspection('${id}')" ${isArchived?'style="opacity:.7"':''}>
         <div class="dash-item-top">
-          <div><h4>${d.propertyName||'Untitled'}</h4><div class="dash-item-meta">${[d.market,date,bc+' bldg'+(bc!==1?'s':'')].filter(Boolean).join(' · ')}</div>${isAdmin?`<div class="dash-item-owner">${d.userName||d.inspectorName||d.userEmail||'Unknown'}</div>`:''}</div>
+          <div><h4>${d.propertyName||'Untitled'}</h4><div class="dash-item-meta">${[d.market,date,d.inspectionType==='daily-log'?bc+' log'+(bc!==1?'s':''):bc+' bldg'+(bc!==1?'s':'')].filter(Boolean).join(' · ')}</div>${isAdmin?`<div class="dash-item-owner">${d.userName||d.inspectorName||d.userEmail||'Unknown'}</div>`:''}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <div class="dash-item-badges"><span class="type-badge-sm" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="status-badge status-${d.status||'draft'}">${d.status||'draft'}</span></div>
             ${archiveBtn}
@@ -594,7 +611,7 @@ async function openInspection(docId){
     if(!doc.exists){hideSaving();toast('Not found','error');return;}
     const d=doc.data();currentDocId=docId;inspectionType=d.inspectionType||'';
     document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
-    if(inspectionType){const tc=document.getElementById('type-'+inspectionType);if(tc)tc.classList.add('selected');document.getElementById('typeNextBtn').disabled=false;}
+    if(inspectionType){const tc=document.getElementById('type-'+inspectionType);if(tc)tc.classList.add('selected');document.getElementById('typeNextBtn').disabled=false;document.getElementById('tabStep2').textContent=inspectionType==='daily-log'?'Daily Logs':'Buildings';}
     ['propertyName','propertyAddress','market','totalBuildings','roofType','inspectionDate','inspectorName','reportNumber','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(f=>{const el=document.getElementById(f);if(el&&d[f]!==undefined)el.value=d[f];});
     buildings=(d.buildings||[]).map(b=>({
       id:b.id||Date.now()+Math.random(),name:b.name||'',
@@ -604,7 +621,11 @@ async function openInspection(docId){
         typeof r==='string'?{description:r,priority:'medium',photos:[]}:
         {description:r.description||'',priority:r.priority||'medium',photos:(r.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))}
       ),
-      actions:(b.actions||[{description:'',photos:[]}]).map(a=>({description:a.description||'',photos:(a.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))}))
+      actions:(b.actions||[{description:'',priority:'medium',photos:[]}]).map(a=>({description:a.description||'',priority:a.priority||'medium',photos:(a.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))})),
+      logDate:b.logDate||new Date().toISOString().split('T')[0],weather:b.weather||'',
+      crews:b.crews&&b.crews.length?b.crews:[{subName:'',headcount:''}],
+      workCompleted:b.workCompleted||'',materialsDelivered:b.materialsDelivered||'',
+      safetyIncidents:b.safetyIncidents||'',delays:b.delays||''
     }));
     if(!buildings.length)buildings=[newBuilding()];
     activeBldg=0;showForm();goStep(0);hideSaving();isDirty=false;clearAutoSave();updateAutoSaveStatus('');
@@ -691,9 +712,9 @@ async function doSave(status){
           if(ph.url){actPhotos.push({url:ph.url,caption:ph.caption||''});}
           else if(ph.data&&ph.data.startsWith('data:')){const ref=storage.ref(`inspections/${currentDocId||'t_'+Date.now()}/b${bi}_a${ai}_${Date.now()}_${Math.random().toString(36).slice(2,6)}`);await ref.putString(ph.data,'data_url');const url=await ref.getDownloadURL();actPhotos.push({url,caption:ph.caption||''});ph.url=url;}
         }
-        savedActions.push({description:act.description,photos:actPhotos});
+        savedActions.push({description:act.description,priority:act.priority||'medium',photos:actPhotos});
       }
-      savedBuildings.push({name:b.name,priority:b.priority,findings:b.findings,action:b.action,photos:mainPhotos,repairs:savedRepairs,actions:savedActions});
+      savedBuildings.push({name:b.name,priority:b.priority,findings:b.findings,action:b.action,photos:mainPhotos,repairs:savedRepairs,actions:savedActions,logDate:b.logDate||'',weather:b.weather||'',crews:b.crews||[],workCompleted:b.workCompleted||'',materialsDelivered:b.materialsDelivered||'',safetyIncidents:b.safetyIncidents||'',delays:b.delays||''});
     }
     const data={inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:v('reportNumber'),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes'),buildings:savedBuildings,status,userId:currentUser.uid,userEmail:currentUser.email,userName:currentTeamName||currentUser.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     if(currentDocId){await db.collection('inspections').doc(currentDocId).update(data);}
@@ -714,13 +735,14 @@ function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function v(id){const el=document.getElementById(id);return el?el.value:'';}
 
 // ═══════ TYPE ═══════
-function selectType(type){inspectionType=type;document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));document.getElementById('type-'+type).classList.add('selected');document.getElementById('typeNextBtn').disabled=false;markDirty();}
+function selectType(type){inspectionType=type;document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));document.getElementById('type-'+type).classList.add('selected');document.getElementById('typeNextBtn').disabled=false;document.getElementById('tabStep2').textContent=isDailyLog()?'Daily Logs':'Buildings';markDirty();}
 
 // ═══════ NAVIGATION ═══════
 let currentStep=0;
 function goStep(n){if(n>0&&!inspectionType)return;document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));document.getElementById('tabBar').style.display='';document.getElementById('step'+n).classList.add('active');currentStep=n;if(n===2){syncBuildingsToCount();renderBldgTabs();}if(isDirty){clearAutoSave();triggerAutoSave();}}
 // ── Bug fix: auto-generate buildings from totalBuildings input ──
 function syncBuildingsToCount(){
+  if(isDailyLog()) return; // Daily logs don't use building count
   const target=parseInt(document.getElementById('totalBuildings').value)||0;
   if(target>0&&target!==buildings.length){
     // Only sync if user hasn't customized buildings yet (all names empty and no data entered)
@@ -742,7 +764,10 @@ function renderBldgTabs(){
   buildings.forEach((b,i)=>{
     const btn=document.createElement('button');
     btn.className='bldg-tab'+(i===activeBldg?' active':'');
-    if(isRepair()){btn.textContent=b.name||'Bldg '+(i+1);}
+    if(isDailyLog()){
+      const d=b.logDate?new Date(b.logDate+'T12:00:00'):null;
+      btn.textContent=d?`${d.getMonth()+1}/${d.getDate()}`:'Day '+(i+1);
+    } else if(isRepair()||isCompletedRepair()){btn.textContent=b.name||'Bldg '+(i+1);}
     else{btn.innerHTML=`<span class="dot" style="background:${P[b.priority].color}"></span>${b.name||'Bldg '+(i+1)}`;}
     btn.onclick=()=>{activeBldg=i;renderBldgTabs();renderBldgForm();};
     ct.appendChild(btn);
@@ -756,7 +781,10 @@ function updateBldgTabLabels(){
   const tabs=document.getElementById('bldgTabs').querySelectorAll('.bldg-tab');
   buildings.forEach((b,i)=>{
     if(tabs[i]){
-      if(isRepair()){tabs[i].textContent=b.name||'Bldg '+(i+1);}
+      if(isDailyLog()){
+        const d=b.logDate?new Date(b.logDate+'T12:00:00'):null;
+        tabs[i].textContent=d?`${d.getMonth()+1}/${d.getDate()}`:'Day '+(i+1);
+      } else if(isRepair()||isCompletedRepair()){tabs[i].textContent=b.name||'Bldg '+(i+1);}
       else{tabs[i].innerHTML=`<span class="dot" style="background:${P[b.priority].color}"></span>${b.name||'Bldg '+(i+1)}`;}
     }
   });
@@ -769,7 +797,7 @@ function renderBldgForm(){
   const removeBtn=buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Building</button>`:'';
 
   if(isRepair()){
-    // ── REPAIR FORM ──
+    // ── REPAIR INSPECTION FORM ──
     form.innerHTML=`<div class="card">${moveRow}${nameField}
       <div class="field">
         <label class="lbl">Repairs Found (${b.repairs.length})</label>
@@ -777,6 +805,58 @@ function renderBldgForm(){
         <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addRepair()">+ Add Repair</button>
       </div>
       ${removeBtn}</div>`;
+  } else if(isCompletedRepair()){
+    // ── COMPLETED REPAIR FORM ──
+    form.innerHTML=`<div class="card">${moveRow}${nameField}
+      <div class="field">
+        <label class="lbl" style="color:#1565C0">✅ Repairs Completed (${b.repairs.length})</label>
+        <div>${b.repairs.map((r,ri)=>renderCompletedRepairCard(r,ri)).join('')}</div>
+        <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addRepair()">+ Add Completed Repair</button>
+      </div>
+      <hr style="border:none;border-top:1px solid #EAECF0;margin:8px 0 16px">
+      <div class="field">
+        <label class="lbl" style="color:#E65100">⚠️ Recommended Actions (${b.actions.length})</label>
+        <p style="font-size:12px;color:#667085;margin-bottom:10px">Additional issues found on the roof during the repair</p>
+        <div>${b.actions.map((a,ai)=>renderRecommendedActionCard(a,ai)).join('')}</div>
+        <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addAction()">+ Add Recommended Action</button>
+      </div>
+      ${removeBtn}</div>`;
+  } else if(isDailyLog()){
+    // ── DAILY LOG FORM ──
+    const logMoveRow=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3 style="margin:0">📝 Log ${activeBldg+1} of ${buildings.length}</h3><div class="bldg-move"><button onclick="moveBldg(-1)" ${activeBldg===0?'disabled style="opacity:.3"':''}>↑</button><button onclick="moveBldg(1)" ${activeBldg===buildings.length-1?'disabled style="opacity:.3"':''}>↓</button></div></div>`;
+    const logRemoveBtn=buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Log Entry</button>`:'';
+    form.innerHTML=`<div class="card">${logMoveRow}
+      <div class="row">
+        <div class="field"><label class="lbl">Log Date</label><input type="date" value="${b.logDate||''}" oninput="buildings[activeBldg].logDate=this.value;updateBldgTabLabels()"></div>
+        <div class="field"><label class="lbl">Weather / Conditions</label><input value="${esc(b.weather||'')}" placeholder="e.g. Clear, 85°F" oninput="buildings[activeBldg].weather=this.value"></div>
+      </div>
+      <div class="field">
+        <label class="lbl">Crews on Site</label>
+        ${(b.crews||[]).map((c,ci)=>`<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+          <input style="flex:2" value="${esc(c.subName)}" placeholder="Sub company name" oninput="buildings[activeBldg].crews[${ci}].subName=this.value">
+          <input style="flex:0 0 70px;text-align:center" type="number" value="${c.headcount||''}" placeholder="# Crew" oninput="buildings[activeBldg].crews[${ci}].headcount=this.value">
+          ${b.crews.length>1?`<button style="padding:8px 12px;border-radius:6px;border:none;background:#FEE4E2;color:#C62828;font-size:16px;cursor:pointer" onclick="buildings[activeBldg].crews.splice(${ci},1);renderBldgForm();markDirty()">×</button>`:''}
+        </div>`).join('')}
+        <button class="btn btn-outline" style="width:auto;padding:8px 12px;font-size:13px" onclick="buildings[activeBldg].crews.push({subName:'',headcount:''});renderBldgForm();markDirty()">+ Add Crew</button>
+      </div>
+      <div class="field"><label class="lbl">Work Completed Today</label>
+        <textarea placeholder="Describe all work completed today..." oninput="buildings[activeBldg].workCompleted=this.value" style="min-height:80px">${esc(b.workCompleted||'')}</textarea>
+      </div>
+      <div class="field"><label class="lbl">Materials Delivered / Used</label>
+        <textarea placeholder="e.g. 40 bundles shingles delivered, 12 rolls underlayment used..." oninput="buildings[activeBldg].materialsDelivered=this.value" style="min-height:60px">${esc(b.materialsDelivered||'')}</textarea>
+      </div>
+      <div class="field"><label class="lbl">Delays / Schedule Impacts</label>
+        <textarea placeholder="Any delays, weather holds, material shortages..." oninput="buildings[activeBldg].delays=this.value" style="min-height:60px">${esc(b.delays||'')}</textarea>
+      </div>
+      <div class="field"><label class="lbl">Safety Incidents or Concerns</label>
+        <textarea placeholder="Any safety issues, near-misses, or concerns..." oninput="buildings[activeBldg].safetyIncidents=this.value" style="min-height:60px">${esc(b.safetyIncidents||'')}</textarea>
+      </div>
+      <div class="field"><label class="lbl">Progress Photos (${b.photos.length})</label>
+        <div class="photo-grid">${b.photos.map((p,i)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].photos[${i}].caption=this.value"><button class="edit-photo" onclick="openMarkup('main',${i})">✎</button><button class="del-photo" onclick="removePhoto(${i})">×</button></div>`).join('')}</div>
+        <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
+        <button class="btn btn-outline" style="padding:12px;font-size:14px" onclick="document.getElementById('photoInput').click()">📷 Add Photos</button>
+      </div>
+      ${logRemoveBtn}</div>`;
   } else {
     // ── REPLACEMENT / DUE DILIGENCE ──
     form.innerHTML=`<div class="card">${moveRow}${nameField}
@@ -843,6 +923,52 @@ function renderActionCard(a, ai){
   </div>`;
 }
 
+// ── Render a completed repair card (no priority — repair is done) ──
+function renderCompletedRepairCard(r, ri){
+  return `<div class="repair-card" style="border-left:3px solid #1565C0">
+    <div class="repair-card-header">
+      <h4>Repair ${ri+1}</h4>
+      ${buildings[activeBldg].repairs.length>1?`<button onclick="removeRepair(${ri})">Remove</button>`:''}
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <textarea placeholder="Describe the repair that was completed..." oninput="buildings[activeBldg].repairs[${ri}].description=this.value" style="min-height:60px">${esc(r.description)}</textarea>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label class="lbl" style="font-size:12px">Photos (${r.photos.length})</label>
+      <div class="photo-grid">${r.photos.map((p,pi)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].repairs[${ri}].photos[${pi}].caption=this.value"><button class="edit-photo" onclick="openMarkup('repair',${pi},${ri})">✎</button><button class="del-photo" onclick="removeRepairPhoto(${ri},${pi})">×</button></div>`).join('')}</div>
+      <input type="file" id="repairPhotoInput${ri}" accept="image/*" multiple style="display:none" onchange="addRepairPhotos(${ri},this)">
+      <button class="btn btn-outline" style="padding:8px 12px;font-size:13px" onclick="document.getElementById('repairPhotoInput${ri}').click()">📷 Add Photos</button>
+    </div>
+  </div>`;
+}
+
+// ── Render a recommended action card (with priority) ──
+function renderRecommendedActionCard(a, ai){
+  return `<div class="action-card" style="border-left:3px solid #E65100">
+    <div class="action-card-header">
+      <h4>Action ${ai+1}</h4>
+      ${buildings[activeBldg].actions.length>1?`<button onclick="removeAction(${ai})">Remove</button>`:''}
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <textarea placeholder="Describe the issue found and recommended action..." oninput="buildings[activeBldg].actions[${ai}].description=this.value" style="min-height:60px">${esc(a.description)}</textarea>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label class="lbl" style="font-size:12px">Priority</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+        ${Object.entries(RP).map(([k,rpv])=>`<button class="p-btn-sm" onclick="setActionPriority(${ai},'${k}')" style="color:${rpv.color};border-color:${a.priority===k?rpv.color:'#D0D5DD'};background:${a.priority===k?rpv.bg:'white'}">${rpv.label}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label class="lbl" style="font-size:12px">Photos (${a.photos.length})</label>
+      <div class="photo-grid">${a.photos.map((p,pi)=>`<div class="photo-cell"><img src="${p.url||p.data}" alt=""><input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].actions[${ai}].photos[${pi}].caption=this.value"><button class="edit-photo" onclick="openMarkup('action',${pi},${ai})">✎</button><button class="del-photo" onclick="removeActionPhoto(${ai},${pi})">×</button></div>`).join('')}</div>
+      <input type="file" id="actionPhotoInput${ai}" accept="image/*" multiple style="display:none" onchange="addActionPhotos(${ai},this)">
+      <button class="btn btn-outline" style="padding:8px 12px;font-size:13px" onclick="document.getElementById('actionPhotoInput${ai}').click()">📷 Add Photos</button>
+    </div>
+  </div>`;
+}
+
+function setActionPriority(ai,p){buildings[activeBldg].actions[ai].priority=p;renderBldgForm();markDirty();}
+
 // ── Repair functions ──
 function addRepair(){buildings[activeBldg].repairs.push(newRepairItem());renderBldgForm();markDirty();}
 function removeRepair(i){buildings[activeBldg].repairs.splice(i,1);renderBldgForm();markDirty();}
@@ -854,7 +980,7 @@ function addRepairPhotos(ri,input){
 function removeRepairPhoto(ri,pi){buildings[activeBldg].repairs[ri].photos.splice(pi,1);renderBldgForm();markDirty();}
 
 // ── Action functions ──
-function addAction(){buildings[activeBldg].actions.push({description:'',photos:[]});renderBldgForm();markDirty();}
+function addAction(){buildings[activeBldg].actions.push({description:'',priority:'medium',photos:[]});renderBldgForm();markDirty();}
 function removeAction(i){buildings[activeBldg].actions.splice(i,1);renderBldgForm();markDirty();}
 function addActionPhotos(ai,input){
   const files=Array.from(input.files);let loaded=0;
@@ -875,10 +1001,22 @@ function moveBldg(dir){const ni=activeBldg+dir;if(ni<0||ni>=buildings.length)ret
 function renderPreview(){
   const d=collectData(),t=TYPES[inspectionType]||{label:'—',color:'#667085',bg:'#F2F4F7'};
   let totalPhotos=0;
-  buildings.forEach(b=>{totalPhotos+=b.photos.length;b.repairs.forEach(r=>totalPhotos+=r.photos.length);});
-  document.getElementById('previewMeta').innerHTML=`<div style="margin-bottom:12px"><span class="type-badge" style="background:${t.bg};color:${t.color}">${t.label}</span></div><h3 style="color:#1B2A4A;font-size:20px;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h3><p style="color:#667085;font-size:14px;margin-bottom:16px">${[d.propertyAddress,d.market,buildings.length+' buildings',totalPhotos+' photos'].filter(Boolean).join(' · ')}</p><div class="meta-grid"><div class="lk">Inspector</div><div class="vl">${d.inspectorName||'—'}</div><div class="lk">Date</div><div class="vl">${d.inspectionDate}</div><div class="lk">Report #</div><div class="vl">${d.reportNumber||'—'}</div><div class="lk">Roof Type</div><div class="vl">${d.roofType}</div></div>`;
+  buildings.forEach(b=>{totalPhotos+=b.photos.length;b.repairs.forEach(r=>totalPhotos+=r.photos.length);b.actions.forEach(a=>totalPhotos+=a.photos.length);});
+  document.getElementById('previewMeta').innerHTML=`<div style="margin-bottom:12px"><span class="type-badge" style="background:${t.bg};color:${t.color}">${t.label}</span></div><h3 style="color:#1B2A4A;font-size:20px;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h3><p style="color:#667085;font-size:14px;margin-bottom:16px">${[d.propertyAddress,d.market,isDailyLog()?buildings.length+' log entries':buildings.length+' buildings',totalPhotos+' photos'].filter(Boolean).join(' · ')}</p><div class="meta-grid"><div class="lk">${isDailyLog()?'Superintendent':'Inspector'}</div><div class="vl">${d.inspectorName||'—'}</div><div class="lk">${isDailyLog()?'Project Start':'Date'}</div><div class="vl">${d.inspectionDate}</div><div class="lk">Report #</div><div class="vl">${d.reportNumber||'—'}</div><div class="lk">Roof Type</div><div class="vl">${d.roofType}</div></div>`;
 
-  if(isRepair()){
+  if(isDailyLog()){
+    document.getElementById('previewRanking').innerHTML=`<h4 style="color:#1B2A4A;margin-bottom:12px">Daily Log Entries</h4>`+buildings.map((b,i)=>{
+      const crewCount=b.crews?b.crews.filter(c=>c.subName).length:0;
+      const headTotal=b.crews?b.crews.reduce((s,c)=>s+(parseInt(c.headcount)||0),0):0;
+      return `<div class="rank-row"><span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span><span class="badge" style="background:#F3E5F5;color:#7B1FA2">${b.logDate||'No date'}</span><span style="flex:1;font-weight:500;font-size:14px">${b.weather||'—'}</span><span style="color:#98A2B3;font-size:12px">${crewCount} crew${crewCount!==1?'s':''} · ${headTotal} workers · ${b.photos.length} photos</span></div>`;
+    }).join('');
+  } else if(isCompletedRepair()){
+    document.getElementById('previewRanking').innerHTML=`<h4 style="color:#1B2A4A;margin-bottom:12px">Completed Repairs Summary</h4>`+buildings.map((b,i)=>{
+      const rc=b.repairs.filter(r=>r.description).length,rph=b.repairs.reduce((s,r)=>s+r.photos.length,0);
+      const ac=b.actions.filter(a=>a.description).length;
+      return `<div class="rank-row"><span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span><span class="badge" style="background:#E3F2FD;color:#1565C0">✅</span><span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span><span style="color:#98A2B3;font-size:12px">${rc} repair${rc!==1?'s':''} · ${ac} action${ac!==1?'s':''}</span></div>`;
+    }).join('');
+  } else if(isRepair()){
     document.getElementById('previewRanking').innerHTML=`<h4 style="color:#1B2A4A;margin-bottom:12px">Repair Summary</h4>`+buildings.map((b,i)=>{
       const rc=b.repairs.filter(r=>r.description).length,rph=b.repairs.reduce((s,r)=>s+r.photos.length,0);
       const highest=b.repairs.reduce((h,r)=>{const order={urgent:1,high:2,medium:3,low:4};return (order[r.priority]||3)<(order[h]||3)?r.priority:h;},'low');
@@ -901,7 +1039,49 @@ function showReport(){
 
   let summaryTable='',detailsHtml='';
 
-  if(isRepair()){
+  if(isDailyLog()){
+    // ── DAILY LOG REPORT ──
+    summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#f8f9fa"><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Date</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Weather</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Crews</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Workers</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th></tr></thead><tbody>${buildings.map((b,i)=>{
+      const cc=b.crews?b.crews.filter(c=>c.subName).length:0;
+      const hc=b.crews?b.crews.reduce((s,c)=>s+(parseInt(c.headcount)||0),0):0;
+      return `<tr style="background:${i%2===0?'#f9fafb':'#fff'}"><td style="padding:6px 8px;color:#667085">${i+1}</td><td style="padding:6px 8px;font-weight:500">${b.logDate||'—'}</td><td style="padding:6px 8px;color:#667085">${b.weather||'—'}</td><td style="padding:6px 8px;text-align:center">${cc}</td><td style="padding:6px 8px;text-align:center">${hc}</td><td style="padding:6px 8px;text-align:center;color:#667085">${b.photos.length}</td></tr>`;
+    }).join('')}</tbody></table>`;
+
+    detailsHtml=buildings.map((b,i)=>{
+      const activeCrws=b.crews?b.crews.filter(c=>c.subName):[]; 
+      const sections=[
+        activeCrws.length?['CREWS ON SITE',`<table style="width:100%;border-collapse:collapse;margin-bottom:6px"><thead><tr><th style="padding:4px 8px;text-align:left;font-size:11px;color:#475467">Sub Company</th><th style="padding:4px 8px;text-align:center;font-size:11px;color:#475467">Headcount</th></tr></thead><tbody>${activeCrws.map(c=>`<tr><td style="padding:4px 8px;font-size:13px">${c.subName}</td><td style="padding:4px 8px;text-align:center;font-size:13px;font-weight:600">${c.headcount||'—'}</td></tr>`).join('')}</tbody></table>`]:null,
+        b.workCompleted?['WORK COMPLETED',`<p style="margin:0;font-size:13px">${b.workCompleted}</p>`]:null,
+        b.materialsDelivered?['MATERIALS DELIVERED / USED',`<p style="margin:0;font-size:13px">${b.materialsDelivered}</p>`]:null,
+        b.delays?['DELAYS / SCHEDULE IMPACTS',`<p style="margin:0;font-size:13px;color:#E65100">${b.delays}</p>`]:null,
+        b.safetyIncidents?['SAFETY INCIDENTS',`<p style="margin:0;font-size:13px;color:#C62828">${b.safetyIncidents}</p>`]:null,
+      ].filter(Boolean);
+      return `<div style="margin-bottom:24px;page-break-inside:avoid">
+        <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13px">${b.logDate||'Day '+(i+1)}</span><span style="font-size:12px;opacity:.8">${b.weather||''}</span></div>
+        <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
+          ${sections.map(([title,html])=>`<div style="margin-bottom:10px"><p style="font-weight:700;font-size:11px;color:#7B1FA2;text-transform:uppercase;letter-spacing:.3px;margin:0 0 4px">${title}</p>${html}</div>`).join('')}
+          ${b.photos.length?`<div style="margin-top:8px"><p style="font-weight:700;font-size:11px;color:#7B1FA2;text-transform:uppercase;letter-spacing:.3px;margin:0 0 6px">PROGRESS PHOTOS</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div></div>`:''}
+        </div></div>`;
+    }).join('');
+  } else if(isCompletedRepair()){
+    // ── COMPLETED REPAIR REPORT ──
+    const rpbadge=rp=>{const p=RP[rp]||RP.medium;return `<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px;font-weight:700;background:${p.bg};color:${p.color}">${p.label}</span>`;};
+    summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#f8f9fa"><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Completed</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Actions</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th></tr></thead><tbody>${buildings.map((b,i)=>{
+      const rc=b.repairs.filter(r=>r.description).length,ac=b.actions.filter(a=>a.description).length;
+      const tph=b.repairs.reduce((s,r)=>s+r.photos.length,0)+b.actions.reduce((s,a)=>s+a.photos.length,0);
+      return `<tr style="background:${i%2===0?'#f9fafb':'#fff'}"><td style="padding:6px 8px;color:#667085">${i+1}</td><td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td><td style="padding:6px 8px;text-align:center;color:#2E7D32;font-weight:600">${rc}</td><td style="padding:6px 8px;text-align:center;color:#E65100;font-weight:600">${ac}</td><td style="padding:6px 8px;text-align:center;color:#667085">${tph}</td></tr>`;
+    }).join('')}</tbody></table>`;
+    detailsHtml=buildings.map((b,i)=>{
+      const reps=b.repairs.filter(r=>r.description||r.photos.length);
+      const acts=b.actions.filter(a=>a.description||a.photos.length);
+      return `<div style="margin-bottom:24px;page-break-inside:avoid">
+        <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0"><span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span></div>
+        <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
+          ${reps.length?`<p style="font-weight:700;color:#1565C0;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.3px">✅ Repairs Completed</p>`+reps.map((r,ri)=>`<div style="background:#f8f9fa;border:1px solid #eaecf0;border-left:3px solid #1565C0;border-radius:6px;padding:10px;margin-bottom:8px"><span style="font-weight:600;font-size:13px;color:#344054">Repair ${ri+1}</span><p style="margin:4px 0 6px;font-size:13px">${r.description}</p>${r.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${r.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div>`).join(''):''}
+          ${acts.length?`<p style="font-weight:700;color:#E65100;font-size:12px;margin:12px 0 8px;text-transform:uppercase;letter-spacing:.3px">⚠️ Recommended Actions</p>`+acts.map((a,ai)=>`<div style="background:#fff8f0;border:1px solid #eaecf0;border-left:3px solid #E65100;border-radius:6px;padding:10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-weight:600;font-size:13px;color:#344054">Action ${ai+1}</span>${rpbadge(a.priority)}</div><p style="margin:0 0 6px;font-size:13px">${a.description}</p>${a.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">${a.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}</div>`:''}</div>`).join(''):''}
+        </div></div>`;
+    }).join('');
+  } else if(isRepair()){
     summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#f8f9fa"><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th><th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Repairs</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Highest</th><th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th></tr></thead><tbody>${buildings.map((b,i)=>{
       const reps=b.repairs.filter(r=>r.description),rph=b.repairs.reduce((s,r)=>s+r.photos.length,0);
       const highest=reps.reduce((h,r)=>{const o={urgent:1,high:2,medium:3,low:4};return(o[r.priority]||3)<(o[h]||3)?r.priority:h;},'low');
@@ -936,14 +1116,14 @@ function showReport(){
   const notes=[['UNDERLAYMENT NOTES',d.underlaymentNotes],['TILE / MATERIAL ID',d.tileInfo],['GENERAL NOTES',d.generalNotes]].filter(([,val])=>val).map(([t,val])=>`<div style="margin-bottom:16px"><p style="background:#f8f9fa;padding:7px 10px;font-weight:700;font-size:11px;color:#1B2A4A;margin:0 0 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px">${t}</p><p style="margin:0 0 0 8px;font-size:12px">${val}</p></div>`).join('');
 
   document.getElementById('reportBody').innerHTML=`
-    <div style="background:#1B2A4A;color:white;padding:14px 20px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div><div style="font-size:18px;font-weight:800;letter-spacing:1px">COLONY ROOFERS</div><div style="font-size:10px;opacity:.8;margin-top:2px">ROOF INSPECTION REPORT</div></div><div style="text-align:right;font-size:11px;line-height:1.9"><div>${d.inspectionDate}</div><div>Report #: ${d.reportNumber||'—'}</div><div>${d.inspectorName||'—'}</div></div></div>
+    <div style="background:#1B2A4A;color:white;padding:14px 20px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div><div style="font-size:18px;font-weight:800;letter-spacing:1px">COLONY ROOFERS</div><div style="font-size:10px;opacity:.8;margin-top:2px">${isCompletedRepair()?'COMPLETED REPAIR REPORT':isDailyLog()?'DAILY PROJECT LOG':'ROOF INSPECTION REPORT'}</div></div><div style="text-align:right;font-size:11px;line-height:1.9"><div>${d.inspectionDate}</div><div>Report #: ${d.reportNumber||'—'}</div><div>${d.inspectorName||'—'}</div></div></div>
     <div style="height:4px;background:#CC0000;border-radius:0 0 2px 2px;margin-bottom:16px"></div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px"><h2 style="font-size:18px;color:#1B2A4A;margin:0">${d.propertyName||'Untitled Property'}</h2>${typeBadge}</div>
     <p style="color:#667085;font-size:11px;margin-bottom:12px">${[d.propertyAddress,d.market,d.roofType,buildings.length+' Buildings',d.weatherConditions?'Weather: '+d.weatherConditions:''].filter(Boolean).join(' · ')}</p>
     <hr style="border:none;border-top:1px solid #eaecf0;margin-bottom:16px">
-    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${isRepair()?'Repair Summary':'Priority Summary'}</p>
+    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${isCompletedRepair()?'Completed Repairs Summary':isDailyLog()?'Log Entry Summary':isRepair()?'Repair Summary':'Priority Summary'}</p>
     ${summaryTable}
-    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Building Details</p>
+    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">${isDailyLog()?'Daily Log Entries':'Building Details'}</p>
     ${detailsHtml}${notes}`;
   document.getElementById('reportOverlay').style.display='block';
   document.getElementById('reportOverlay').scrollTop=0;
@@ -1076,14 +1256,17 @@ function openMarkup(type,photoIdx,subIdx){
   mkImg=new Image();
   mkImg.crossOrigin='anonymous';
   mkImg.onload=()=>{
-    const wrap=mkCanvas.parentElement;
-    const maxW=wrap.clientWidth-16;
-    const maxH=wrap.clientHeight-16;
-    const scale=Math.min(maxW/mkImg.width,maxH/mkImg.height,1);
-    mkCanvas.width=Math.round(mkImg.width*scale);
-    mkCanvas.height=Math.round(mkImg.height*scale);
-    mkCtx.drawImage(mkImg,0,0,mkCanvas.width,mkCanvas.height);
-    mkBaseData=mkCanvas.toDataURL('image/jpeg',0.92);
+    // Wait a frame for the overlay to layout, then size canvas to fill the screen
+    requestAnimationFrame(()=>{
+      const wrap=mkCanvas.parentElement;
+      const maxW=wrap.clientWidth;
+      const maxH=wrap.clientHeight;
+      const scale=Math.min(maxW/mkImg.width,maxH/mkImg.height);
+      mkCanvas.width=Math.round(mkImg.width*scale);
+      mkCanvas.height=Math.round(mkImg.height*scale);
+      mkCtx.drawImage(mkImg,0,0,mkCanvas.width,mkCanvas.height);
+      mkBaseData=mkCanvas.toDataURL('image/jpeg',0.92);
+    });
     document.getElementById('markupOverlay').classList.add('active');
   };
   mkImg.onerror=()=>{toast('Could not load photo for markup','error');};
