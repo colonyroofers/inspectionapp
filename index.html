@@ -274,12 +274,12 @@
           </div>
           <div class="type-card" onclick="selectType('replacement')" id="type-replacement">
             <div class="type-icon" style="background:#FFEBEE;color:#C62828">🏠</div>
-            <h4>Roof Replacement</h4>
+            <h4>Roof Replacement Inspection</h4>
             <p>Full evaluation to determine scope, materials, and priority for a complete roof replacement.</p>
           </div>
           <div class="type-card" onclick="selectType('due-diligence')" id="type-due-diligence">
             <div class="type-icon" style="background:#E8F5E9;color:#2E7D32">📋</div>
-            <h4>Due Diligence</h4>
+            <h4>Due Diligence Inspection</h4>
             <p>Pre-acquisition or lease assessment documenting overall roof condition, remaining life, and capital needs.</p>
           </div>
           <div class="type-card" onclick="selectType('completed-repair')" id="type-completed-repair">
@@ -316,10 +316,7 @@
         <h3>Report Details</h3>
         <div class="field"><label class="lbl">Inspection Date</label><input id="inspectionDate" type="date"></div>
         <div class="field"><label class="lbl">Inspector Name</label><input id="inspectorName" placeholder="Your name"></div>
-        <div class="row">
-          <div class="field"><label class="lbl">Report #</label><input id="reportNumber" placeholder="CR-2026-001"></div>
-          <div class="field"><label class="lbl">Weather</label><input id="weatherConditions" placeholder="Clear, Overcast..."></div>
-        </div>
+        <div class="field"><label class="lbl">Weather</label><input id="weatherConditions" placeholder="Clear, Overcast..."></div>
       </div>
       <div class="btn-row">
         <button class="btn btn-outline" onclick="goStep(0)">← Type</button>
@@ -424,7 +421,7 @@ const auth=firebase.auth(),db=firebase.firestore(),storage=firebase.storage();
 
 const P={P1:{label:"P1 – Critical",color:"#C62828",bg:"#FFEBEE"},P2:{label:"P2 – High",color:"#E65100",bg:"#FFF3E0"},P3:{label:"P3 – Moderate",color:"#b38600",bg:"#FFFDE7"},P4:{label:"P4 – Monitor",color:"#2E7D32",bg:"#E8F5E9"}};
 const RP={urgent:{label:"Urgent",color:"#C62828",bg:"#FFEBEE"},high:{label:"High",color:"#E65100",bg:"#FFF3E0"},medium:{label:"Medium",color:"#b38600",bg:"#FFFDE7"},low:{label:"Low",color:"#2E7D32",bg:"#E8F5E9"}};
-const TYPES={'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},'replacement':{label:'Roof Replacement',color:'#C62828',bg:'#FFEBEE'},'due-diligence':{label:'Due Diligence',color:'#2E7D32',bg:'#E8F5E9'},'completed-repair':{label:'Completed Repair',color:'#1565C0',bg:'#E3F2FD'},'daily-log':{label:'Daily Log',color:'#7B1FA2',bg:'#F3E5F5'}};
+const TYPES={'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},'replacement':{label:'Replacement Inspection',color:'#C62828',bg:'#FFEBEE'},'due-diligence':{label:'Due Diligence Inspection',color:'#2E7D32',bg:'#E8F5E9'},'completed-repair':{label:'Completed Repair',color:'#1565C0',bg:'#E3F2FD'},'daily-log':{label:'Daily Log',color:'#7B1FA2',bg:'#F3E5F5'}};
 
 let currentUser=null,isAdmin=false,inspectionType='',activeBldg=0,currentDocId=null,dashFilter='all',currentTeamName='';
 let buildings=[newBuilding()];
@@ -613,7 +610,7 @@ async function unarchiveInspection(docId){
 function startNewInspection(){
   clearAutoSave();isDirty=false;updateAutoSaveStatus('');
   currentDocId=null;inspectionType='';buildings=[newBuilding()];activeBldg=0;
-  ['propertyName','propertyAddress','totalBuildings','inspectorName','reportNumber','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['propertyName','propertyAddress','totalBuildings','inspectorName','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('inspectionDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('market').selectedIndex=0;document.getElementById('roofType').selectedIndex=0;
   document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
@@ -629,7 +626,7 @@ async function openInspection(docId){
     const d=doc.data();currentDocId=docId;inspectionType=d.inspectionType||'';
     document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
     if(inspectionType){const tc=document.getElementById('type-'+inspectionType);if(tc)tc.classList.add('selected');document.getElementById('typeNextBtn').disabled=false;document.getElementById('tabStep2').textContent=inspectionType==='daily-log'?'Daily Logs':'Buildings';}
-    ['propertyName','propertyAddress','market','totalBuildings','roofType','inspectionDate','inspectorName','reportNumber','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(f=>{const el=document.getElementById(f);if(el&&d[f]!==undefined)el.value=d[f];});
+    ['propertyName','propertyAddress','market','totalBuildings','roofType','inspectionDate','inspectorName','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(f=>{const el=document.getElementById(f);if(el&&d[f]!==undefined)el.value=d[f];});
     buildings=(d.buildings||[]).map(b=>({
       id:b.id||Date.now()+Math.random(),name:b.name||'',
       priority:b.priority||'P2',findings:b.findings&&b.findings.length?b.findings:[''],action:b.action||'',
@@ -733,7 +730,7 @@ async function doSave(status){
       }
       savedBuildings.push({name:b.name,priority:b.priority,findings:b.findings,action:b.action,photos:mainPhotos,repairs:savedRepairs,actions:savedActions,logDate:b.logDate||'',weather:b.weather||'',crews:b.crews||[],workCompleted:b.workCompleted||'',materialsDelivered:b.materialsDelivered||'',safetyIncidents:b.safetyIncidents||'',delays:b.delays||''});
     }
-    const data={inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:v('reportNumber'),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes'),buildings:savedBuildings,status,userId:currentUser.uid,userEmail:currentUser.email,userName:currentTeamName||currentUser.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    const data={inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:generateReportNumber(),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes'),buildings:savedBuildings,status,userId:currentUser.uid,userEmail:currentUser.email,userName:currentTeamName||currentUser.displayName||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
     if(currentDocId){await db.collection('inspections').doc(currentDocId).update(data);}
     else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();const ref=await db.collection('inspections').add(data);currentDocId=ref.id;}
 }
@@ -1044,7 +1041,13 @@ function renderPreview(){
     document.getElementById('previewRanking').innerHTML=`<h4 style="color:#1B2A4A;margin-bottom:12px">Priority Ranking</h4>`+buildings.map((b,i)=>`<div class="rank-row"><span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span><span class="badge" style="background:${P[b.priority].bg};color:${P[b.priority].color}">${b.priority}</span><span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span><span style="color:#98A2B3;font-size:12px">${b.findings.filter(Boolean).length} findings · ${b.photos.length} photos</span></div>`).join('');
   }
 }
-function collectData(){return{inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:v('reportNumber'),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes')};}
+function generateReportNumber(){
+  const prefixes={'repair':'RI','replacement':'RRI','due-diligence':'DDI','completed-repair':'CR','daily-log':'DL'};
+  const prefix=prefixes[inspectionType]||'RPT';
+  const date=v('inspectionDate')||new Date().toISOString().split('T')[0];
+  return prefix+'-'+date.replace(/-/g,'');
+}
+function collectData(){return{inspectionType,propertyName:v('propertyName'),propertyAddress:v('propertyAddress'),market:v('market'),totalBuildings:v('totalBuildings'),roofType:v('roofType'),inspectionDate:v('inspectionDate'),inspectorName:v('inspectorName'),reportNumber:generateReportNumber(),weatherConditions:v('weatherConditions'),underlaymentNotes:v('underlaymentNotes'),tileInfo:v('tileInfo'),generalNotes:v('generalNotes')};}
 
 // ═══════ REPORT ═══════
 function showReport(){
@@ -1142,7 +1145,7 @@ function showReport(){
     ${summaryTable}
     <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">${isDailyLog()?'Daily Log Entries':'Building Details'}</p>
     ${detailsHtml}${notes}`;
-  const reportTitles={'repair':'📄 Inspection Report','replacement':'📄 Inspection Report','due-diligence':'📄 Inspection Report','completed-repair':'📄 Completed Repair Report','daily-log':'📄 Daily Project Log'};
+  const reportTitles={'repair':'📄 Repair Inspection Report','replacement':'📄 Replacement Inspection Report','due-diligence':'📄 Due Diligence Inspection Report','completed-repair':'📄 Completed Repair Report','daily-log':'📄 Daily Project Log'};
   document.getElementById('reportBarTitle').textContent=reportTitles[inspectionType]||'📄 Report';
   document.getElementById('reportOverlay').style.display='block';
   document.getElementById('reportOverlay').scrollTop=0;
