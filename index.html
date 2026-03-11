@@ -453,39 +453,56 @@ function isDailyLog(){ return inspectionType==='daily-log'; }
 // Bootstrap admin — first admin is auto-provisioned if team collection is empty
 const BOOTSTRAP_ADMIN='zach@colonyroofers.com';
 
+const ALLOWED_DOMAIN='colonyroofers.com';
+
 auth.onAuthStateChanged(async user=>{
   if(user){
     currentUser=user;
     isAdmin=false;
     currentTeamName='';
+    const email=user.email.toLowerCase();
+    const isCompanyEmail=email.endsWith('@'+ALLOWED_DOMAIN);
     try{
       // Check team collection for this user's role and name
-      const teamDoc=await db.collection('team').doc(user.email.toLowerCase()).get();
+      const teamDoc=await db.collection('team').doc(email).get();
       if(teamDoc.exists){
         const td=teamDoc.data();
         isAdmin=td.role==='admin';
         currentTeamName=td.name||'';
-        // If team record has no name but Google has one, update it
         if(!td.name&&user.displayName){
-          await db.collection('team').doc(user.email.toLowerCase()).update({name:user.displayName});
+          await db.collection('team').doc(email).update({name:user.displayName});
           currentTeamName=user.displayName;
         }
-      } else {
-        // Check if team collection is empty (first-time setup)
+      } else if(isCompanyEmail){
+        // Auto-provision @colonyroofers.com users as regular users
         const teamSnap=await db.collection('team').limit(1).get();
         if(teamSnap.empty){
+          // First-time setup: make them admin
           const name=user.displayName||'';
-          await db.collection('team').doc(user.email.toLowerCase()).set({
-            email:user.email.toLowerCase(),name:name,role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
+          await db.collection('team').doc(email).set({
+            email:email,name:name,role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
           });
           isAdmin=true;
           currentTeamName=name;
-          if(user.email.toLowerCase()!==BOOTSTRAP_ADMIN.toLowerCase()){
+          if(email!==BOOTSTRAP_ADMIN.toLowerCase()){
             await db.collection('team').doc(BOOTSTRAP_ADMIN.toLowerCase()).set({
               email:BOOTSTRAP_ADMIN.toLowerCase(),name:'Zach Reece',role:'admin',addedAt:firebase.firestore.FieldValue.serverTimestamp()
             });
           }
+        } else {
+          // Auto-add company email as standard user
+          await db.collection('team').doc(email).set({
+            email:email,name:user.displayName||'',role:'user',addedAt:firebase.firestore.FieldValue.serverTimestamp()
+          });
+          currentTeamName=user.displayName||'';
         }
+      } else {
+        // Not a company email and not in team — deny access
+        await auth.signOut();
+        const el=document.getElementById('loginError');
+        el.textContent='Access restricted to @'+ALLOWED_DOMAIN+' accounts. Contact your admin to be added.';
+        el.style.display='block';
+        return;
       }
     }catch(e){console.error('Team check error:',e);}
     document.getElementById('loginScreen').style.display='none';
