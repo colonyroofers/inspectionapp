@@ -48,7 +48,6 @@
   .btn:disabled{opacity:.4;pointer-events:none}
   .step{display:none}
   .step.active{display:block}
-  /* Login */
   .login-wrap{max-width:400px;margin:80px auto 0;text-align:center}
   .login-wrap .card{padding:32px}
   .login-logo{font-size:24px;font-weight:800;color:#1B2A4A;letter-spacing:1px;margin-bottom:4px}
@@ -58,7 +57,6 @@
   .google-btn:hover{border-color:#1B2A4A;box-shadow:0 2px 8px rgba(0,0,0,.1)}
   .google-btn svg{width:20px;height:20px}
   .login-error{background:#FEE4E2;color:#C62828;padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
-  /* Dashboard */
   .dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
   .dash-header h2{font-size:20px;color:#1B2A4A}
   .dash-filters{display:flex;gap:8px;margin-bottom:16px}
@@ -87,7 +85,6 @@
   .toast-success{background:#2E7D32;color:white}
   .toast-error{background:#C62828;color:white}
   @keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-  /* Inspection Type */
   .type-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
   .type-card{position:relative;background:white;border-radius:12px;padding:20px 20px 20px 62px;border:2px solid #EAECF0;cursor:pointer;transition:all .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.06)}
   .type-card:hover{border-color:#1B2A4A;box-shadow:0 4px 12px rgba(27,42,74,.12)}
@@ -96,7 +93,6 @@
   .type-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
   .type-card h4{font-size:16px;font-weight:700;color:#1B2A4A;margin-bottom:3px}
   .type-card p{font-size:13px;color:#667085;line-height:1.4;margin:0}
-  /* Buildings */
   .bldg-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
   .bldg-tab{padding:10px 16px;border-radius:8px;border:1px solid #D0D5DD;background:white;color:#344054;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;min-width:80px;font-family:inherit}
   .bldg-tab.active{background:#1B2A4A;color:white;border-color:#1B2A4A}
@@ -122,11 +118,16 @@
   .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700}
   .type-badge{display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
   .save-bar{position:sticky;bottom:0;background:white;border-top:1px solid #EAECF0;padding:12px 0;margin-top:12px;z-index:100}
+  /* Repair action card */
+  .action-card{background:#F8F9FA;border:1px solid #EAECF0;border-radius:10px;padding:16px;margin-bottom:12px}
+  .action-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .action-card-header h4{font-size:14px;color:#1B2A4A;margin:0;font-weight:700}
+  .action-card-header button{background:none;border:none;color:#C62828;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline}
 </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen" class="login-wrap">
   <div class="card">
     <div class="login-logo">COLONY ROOFERS</div>
@@ -179,7 +180,6 @@
       <div class="tab" onclick="goStep(3)">Notes</div>
     </div>
 
-    <!-- STEP 0: Type -->
     <div class="step active" id="step0">
       <div class="card">
         <h3>Select Inspection Type</h3>
@@ -204,7 +204,6 @@
       <button class="btn btn-navy" onclick="goStep(1)" id="typeNextBtn" disabled>Next → Property</button>
     </div>
 
-    <!-- STEP 1: Property -->
     <div class="step" id="step1">
       <div class="card">
         <h3>Property Information</h3>
@@ -239,7 +238,6 @@
       </div>
     </div>
 
-    <!-- STEP 2: Buildings -->
     <div class="step" id="step2">
       <div class="bldg-tabs" id="bldgTabs"></div>
       <div id="bldgForm"></div>
@@ -249,7 +247,6 @@
       </div>
     </div>
 
-    <!-- STEP 3: Notes -->
     <div class="step" id="step3">
       <div class="card">
         <h3>General Property Notes</h3>
@@ -269,7 +266,6 @@
       </div>
     </div>
 
-    <!-- PREVIEW -->
     <div class="step" id="stepPreview">
       <div class="card" id="previewMeta"></div>
       <div class="card" id="previewRanking"></div>
@@ -279,7 +275,6 @@
       </div>
     </div>
 
-    <!-- Save Bar -->
     <div class="save-bar">
       <div class="btn-row">
         <button class="btn btn-outline" onclick="saveInspection('draft')">💾 Save Draft</button>
@@ -303,16 +298,12 @@
   </div>
 </div>
 
-<!-- Saving Overlay -->
 <div id="savingOverlay" class="saving-overlay" style="display:none">
   <div class="spinner"></div>
-  <span id="savingText">Saving inspection...</span>
+  <span id="savingText">Saving...</span>
 </div>
 
 <script>
-// ╔═══════════════════════════════════════════════╗
-// ║  FIREBASE CONFIG — REPLACE WITH YOUR VALUES   ║
-// ╚═══════════════════════════════════════════════╝
 const firebaseConfig = {
   apiKey:            "AIzaSyCawWMq5X2OpWsmplOYxrR6bhyHeAzXKFw",
   authDomain:        "colony-inspection-app.firebaseapp.com",
@@ -321,141 +312,86 @@ const firebaseConfig = {
   messagingSenderId: "869437682472",
   appId:             "1:869437682472:web:95ae789bc1fc3baa09d61d"
 };
-
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+const auth=firebase.auth(), db=firebase.firestore(), storage=firebase.storage();
 
 // ── Constants ──
-const P = {
+const P={
   P1:{label:"P1 – Critical",color:"#C62828",bg:"#FFEBEE"},
   P2:{label:"P2 – High",color:"#E65100",bg:"#FFF3E0"},
   P3:{label:"P3 – Moderate",color:"#b38600",bg:"#FFFDE7"},
   P4:{label:"P4 – Monitor",color:"#2E7D32",bg:"#E8F5E9"},
 };
-const TYPES = {
+const TYPES={
   'repair':{label:'Repair Inspection',color:'#E65100',bg:'#FFF3E0'},
   'replacement':{label:'Roof Replacement',color:'#C62828',bg:'#FFEBEE'},
   'due-diligence':{label:'Due Diligence',color:'#2E7D32',bg:'#E8F5E9'},
 };
 
 // ── State ──
-let currentUser = null;
-let isAdmin = false;
-let inspectionType = '';
-let buildings = [newBuilding()];
-let activeBldg = 0;
-let currentDocId = null;
-let dashFilter = 'all';
+let currentUser=null, isAdmin=false, inspectionType='', activeBldg=0, currentDocId=null, dashFilter='all';
+let buildings=[newBuilding()];
 
 function newBuilding(){
-  return {id:Date.now()+Math.random(),name:"",priority:"P2",findings:[""],action:"",photos:[]};
+  return {
+    id:Date.now()+Math.random(), name:'',
+    // Replacement / Due Diligence fields
+    priority:'P2', findings:[''], action:'', photos:[],
+    // Repair fields
+    repairs:[''],
+    actions:[{description:'', photos:[]}]
+  };
 }
+function isRepair(){ return inspectionType==='repair'; }
 
-// ╔═══════════════════════════════════╗
-// ║       AUTHENTICATION              ║
-// ╚═══════════════════════════════════╝
-auth.onAuthStateChanged(async user => {
+// ═══════ AUTH ═══════
+auth.onAuthStateChanged(async user=>{
   if(user){
-    currentUser = user;
-    try {
-      const adminDoc = await db.collection('config').doc('admins').get();
-      if(adminDoc.exists){
-        const admins = adminDoc.data().emails || [];
-        isAdmin = admins.includes(user.email);
-      }
-    } catch(e){ console.log('Admin check:', e.message); }
-
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainApp').style.display = '';
-    document.getElementById('userPill').innerHTML = `
+    currentUser=user;
+    try{ const d=await db.collection('config').doc('admins').get(); if(d.exists) isAdmin=(d.data().emails||[]).includes(user.email); }catch(e){}
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('mainApp').style.display='';
+    document.getElementById('userPill').innerHTML=`
       <img src="${user.photoURL||''}" alt="" onerror="this.style.display='none'">
       <span>${user.displayName||user.email}</span>
       ${isAdmin?'<span style="background:#1B2A4A;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">ADMIN</span>':''}
       <button onclick="signOut()">Sign out</button>`;
     if(isAdmin) document.getElementById('adminToggle').style.display='';
     loadInspections();
-  } else {
-    currentUser = null;
-    isAdmin = false;
-    document.getElementById('loginScreen').style.display = '';
-    document.getElementById('mainApp').style.display = 'none';
-  }
+  } else { currentUser=null; isAdmin=false; document.getElementById('loginScreen').style.display=''; document.getElementById('mainApp').style.display='none'; }
 });
-
-function signIn(){
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
-    const el = document.getElementById('loginError');
-    el.textContent = err.message;
-    el.style.display = 'block';
-  });
-}
+function signIn(){ auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{ const el=document.getElementById('loginError'); el.textContent=e.message; el.style.display='block'; }); }
 function signOut(){ auth.signOut(); }
 
-// ╔═══════════════════════════════════╗
-// ║          DASHBOARD                ║
-// ╚═══════════════════════════════════╝
+// ═══════ DASHBOARD ═══════
 async function loadInspections(){
-  const list = document.getElementById('dashList');
-  list.innerHTML = '<div style="text-align:center;padding:20px;color:#98A2B3">Loading...</div>';
-  try {
-    const showAll = isAdmin && document.getElementById('showAllToggle').checked;
-    let q = db.collection('inspections').orderBy('updatedAt','desc');
-    if(!showAll) q = q.where('userId','==',currentUser.uid);
-    if(dashFilter!=='all') q = q.where('status','==',dashFilter);
-    const snap = await q.get();
-    if(snap.empty){
-      list.innerHTML = '<div class="dash-empty"><p>No inspections found</p><button class="btn btn-navy" style="width:auto;padding:10px 20px;font-size:14px;display:inline-block" onclick="startNewInspection()">+ Start New Inspection</button></div>';
-      return;
-    }
-    list.innerHTML = '';
-    snap.forEach(doc => {
-      const d = doc.data();
-      const t = TYPES[d.inspectionType]||{label:'—',color:'#667085',bg:'#F2F4F7'};
-      const showAll2 = isAdmin && document.getElementById('showAllToggle').checked;
-      const date = d.inspectionDate||(d.updatedAt?new Date(d.updatedAt.seconds*1000).toLocaleDateString():'');
-      const bc = (d.buildings||[]).length;
-      list.innerHTML += `
-        <div class="dash-item" onclick="openInspection('${doc.id}')">
-          <div class="dash-item-top">
-            <div>
-              <h4>${d.propertyName||'Untitled Inspection'}</h4>
-              <div class="dash-item-meta">${[d.market,date,bc+' bldg'+(bc!==1?'s':'')].filter(Boolean).join(' · ')}</div>
-              ${showAll2&&d.userEmail?`<div class="dash-item-owner">${d.userName||d.userEmail}</div>`:''}
-            </div>
-            <div class="dash-item-badges">
-              <span class="type-badge-sm" style="background:${t.bg};color:${t.color}">${t.label}</span>
-              <span class="status-badge status-${d.status||'draft'}">${d.status||'draft'}</span>
-            </div>
-          </div>
-        </div>`;
+  const list=document.getElementById('dashList');
+  list.innerHTML='<div style="text-align:center;padding:20px;color:#98A2B3">Loading...</div>';
+  try{
+    const showAll=isAdmin&&document.getElementById('showAllToggle').checked;
+    let q=db.collection('inspections').orderBy('updatedAt','desc');
+    if(!showAll) q=q.where('userId','==',currentUser.uid);
+    if(dashFilter!=='all') q=q.where('status','==',dashFilter);
+    const snap=await q.get();
+    if(snap.empty){ list.innerHTML='<div class="dash-empty"><p>No inspections found</p><button class="btn btn-navy" style="width:auto;padding:10px 20px;font-size:14px;display:inline-block" onclick="startNewInspection()">+ Start New Inspection</button></div>'; return; }
+    list.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data(), t=TYPES[d.inspectionType]||{label:'—',color:'#667085',bg:'#F2F4F7'};
+      const showAll2=isAdmin&&document.getElementById('showAllToggle').checked;
+      const date=d.inspectionDate||(d.updatedAt?new Date(d.updatedAt.seconds*1000).toLocaleDateString():'');
+      const bc=(d.buildings||[]).length;
+      list.innerHTML+=`<div class="dash-item" onclick="openInspection('${doc.id}')"><div class="dash-item-top"><div><h4>${d.propertyName||'Untitled Inspection'}</h4><div class="dash-item-meta">${[d.market,date,bc+' bldg'+(bc!==1?'s':'')].filter(Boolean).join(' · ')}</div>${showAll2&&d.userEmail?`<div class="dash-item-owner">${d.userName||d.userEmail}</div>`:''}</div><div class="dash-item-badges"><span class="type-badge-sm" style="background:${t.bg};color:${t.color}">${t.label}</span><span class="status-badge status-${d.status||'draft'}">${d.status||'draft'}</span></div></div></div>`;
     });
-  } catch(e){
-    list.innerHTML = `<div class="dash-empty" style="color:#C62828">Error: ${e.message}</div>`;
-  }
+  }catch(e){ list.innerHTML=`<div class="dash-empty" style="color:#C62828">Error: ${e.message}</div>`; }
 }
+function setFilter(f,el){ dashFilter=f; document.querySelectorAll('.dash-filter').forEach(b=>b.classList.remove('active')); el.classList.add('active'); loadInspections(); }
 
-function setFilter(f,el){
-  dashFilter=f;
-  document.querySelectorAll('.dash-filter').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  loadInspections();
-}
-
-// ╔═══════════════════════════════════╗
-// ║     NEW / OPEN INSPECTION         ║
-// ╚═══════════════════════════════════╝
+// ═══════ NEW / OPEN ═══════
 function startNewInspection(){
   currentDocId=null; inspectionType=''; buildings=[newBuilding()]; activeBldg=0;
-  ['propertyName','propertyAddress','totalBuildings','inspectorName','reportNumber',
-   'weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
+  ['propertyName','propertyAddress','totalBuildings','inspectorName','reportNumber','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('inspectionDate').value=new Date().toISOString().split('T')[0];
-  document.getElementById('market').selectedIndex=0;
-  document.getElementById('roofType').selectedIndex=0;
+  document.getElementById('market').selectedIndex=0; document.getElementById('roofType').selectedIndex=0;
   document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('typeNextBtn').disabled=true;
   if(currentUser&&currentUser.displayName) document.getElementById('inspectorName').value=currentUser.displayName;
@@ -463,117 +399,84 @@ function startNewInspection(){
 }
 
 async function openInspection(docId){
-  showSaving('Loading inspection...');
-  try {
-    const doc = await db.collection('inspections').doc(docId).get();
+  showSaving('Loading...');
+  try{
+    const doc=await db.collection('inspections').doc(docId).get();
     if(!doc.exists){ hideSaving(); toast('Not found','error'); return; }
-    const d = doc.data();
-    currentDocId = docId;
-    inspectionType = d.inspectionType||'';
+    const d=doc.data(); currentDocId=docId; inspectionType=d.inspectionType||'';
     document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
-    if(inspectionType){
-      const tc=document.getElementById('type-'+inspectionType);
-      if(tc) tc.classList.add('selected');
-      document.getElementById('typeNextBtn').disabled=false;
-    }
-    ['propertyName','propertyAddress','market','totalBuildings','roofType',
-     'inspectionDate','inspectorName','reportNumber','weatherConditions',
-     'underlaymentNotes','tileInfo','generalNotes'].forEach(f=>{
-      const el=document.getElementById(f);
-      if(el&&d[f]!==undefined) el.value=d[f];
-    });
-    buildings=(d.buildings||[newBuilding()]).map(b=>({
-      id:b.id||Date.now()+Math.random(), name:b.name||'', priority:b.priority||'P2',
-      findings:b.findings&&b.findings.length?b.findings:[''], action:b.action||'',
-      photos:(b.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))
+    if(inspectionType){ const tc=document.getElementById('type-'+inspectionType); if(tc) tc.classList.add('selected'); document.getElementById('typeNextBtn').disabled=false; }
+    ['propertyName','propertyAddress','market','totalBuildings','roofType','inspectionDate','inspectorName','reportNumber','weatherConditions','underlaymentNotes','tileInfo','generalNotes'].forEach(f=>{ const el=document.getElementById(f); if(el&&d[f]!==undefined) el.value=d[f]; });
+    buildings=(d.buildings||[]).map(b=>({
+      id:b.id||Date.now()+Math.random(), name:b.name||'',
+      priority:b.priority||'P2', findings:b.findings&&b.findings.length?b.findings:[''], action:b.action||'',
+      photos:(b.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''})),
+      repairs:b.repairs&&b.repairs.length?b.repairs:[''],
+      actions:(b.actions||[{description:'',photos:[]}]).map(a=>({
+        description:a.description||'',
+        photos:(a.photos||[]).map(p=>({data:p.url||p.data||'',caption:p.caption||'',url:p.url||''}))
+      }))
     }));
     if(!buildings.length) buildings=[newBuilding()];
-    activeBldg=0;
-    showForm(); goStep(0); hideSaving();
-  } catch(e){ hideSaving(); toast('Error: '+e.message,'error'); }
+    activeBldg=0; showForm(); goStep(0); hideSaving();
+  }catch(e){ hideSaving(); toast('Error: '+e.message,'error'); }
 }
 
-function showForm(){
-  document.getElementById('dashboard').style.display='none';
-  document.getElementById('inspectionForm').style.display='';
-}
-function backToDash(){
-  document.getElementById('inspectionForm').style.display='none';
-  document.getElementById('dashboard').style.display='';
-  loadInspections();
-}
+function showForm(){ document.getElementById('dashboard').style.display='none'; document.getElementById('inspectionForm').style.display=''; }
+function backToDash(){ document.getElementById('inspectionForm').style.display='none'; document.getElementById('dashboard').style.display=''; loadInspections(); }
 
-// ╔═══════════════════════════════════╗
-// ║        SAVE INSPECTION            ║
-// ╚═══════════════════════════════════╝
+// ═══════ SAVE ═══════
 async function saveInspection(status){
   if(!currentUser) return;
   showSaving('Saving inspection...');
-  try {
-    const savedBuildings = [];
-    for(let bi=0; bi<buildings.length; bi++){
+  try{
+    const savedBuildings=[];
+    for(let bi=0;bi<buildings.length;bi++){
       const b=buildings[bi];
-      const photos=[];
-      for(let pi=0; pi<b.photos.length; pi++){
+      // Upload photos for replacement/due-diligence
+      const mainPhotos=[];
+      for(let pi=0;pi<b.photos.length;pi++){
         const ph=b.photos[pi];
-        if(ph.url){
-          photos.push({url:ph.url,caption:ph.caption||''});
-        } else if(ph.data&&ph.data.startsWith('data:')){
-          showSaving(`Uploading photo ${pi+1} for ${b.name||'Building '+(bi+1)}...`);
-          const docId=currentDocId||'temp_'+Date.now();
-          const path=`inspections/${docId}/b${bi}_p${pi}_${Date.now()}`;
-          const ref=storage.ref(path);
-          await ref.putString(ph.data,'data_url');
-          const url=await ref.getDownloadURL();
-          photos.push({url,caption:ph.caption||''});
-          ph.url=url;
-        }
+        if(ph.url){ mainPhotos.push({url:ph.url,caption:ph.caption||''}); }
+        else if(ph.data&&ph.data.startsWith('data:')){ showSaving(`Uploading photo...`); const docId=currentDocId||'t_'+Date.now(); const ref=storage.ref(`inspections/${docId}/b${bi}_p${pi}_${Date.now()}`); await ref.putString(ph.data,'data_url'); const url=await ref.getDownloadURL(); mainPhotos.push({url,caption:ph.caption||''}); ph.url=url; }
       }
-      savedBuildings.push({name:b.name,priority:b.priority,findings:b.findings,action:b.action,photos});
+      // Upload photos for repair actions
+      const savedActions=[];
+      for(let ai=0;ai<b.actions.length;ai++){
+        const act=b.actions[ai]; const actPhotos=[];
+        for(let pi=0;pi<act.photos.length;pi++){
+          const ph=act.photos[pi];
+          if(ph.url){ actPhotos.push({url:ph.url,caption:ph.caption||''}); }
+          else if(ph.data&&ph.data.startsWith('data:')){ showSaving(`Uploading photo...`); const docId=currentDocId||'t_'+Date.now(); const ref=storage.ref(`inspections/${docId}/b${bi}_a${ai}_p${pi}_${Date.now()}`); await ref.putString(ph.data,'data_url'); const url=await ref.getDownloadURL(); actPhotos.push({url,caption:ph.caption||''}); ph.url=url; }
+        }
+        savedActions.push({description:act.description,photos:actPhotos});
+      }
+      savedBuildings.push({name:b.name,priority:b.priority,findings:b.findings,action:b.action,photos:mainPhotos,repairs:b.repairs,actions:savedActions});
     }
-    const data = {
+    const data={
       inspectionType, propertyName:v('propertyName'), propertyAddress:v('propertyAddress'),
       market:v('market'), totalBuildings:v('totalBuildings'), roofType:v('roofType'),
       inspectionDate:v('inspectionDate'), inspectorName:v('inspectorName'),
       reportNumber:v('reportNumber'), weatherConditions:v('weatherConditions'),
       underlaymentNotes:v('underlaymentNotes'), tileInfo:v('tileInfo'), generalNotes:v('generalNotes'),
       buildings:savedBuildings, status,
-      userId:currentUser.uid, userEmail:currentUser.email,
-      userName:currentUser.displayName||'',
+      userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.displayName||'',
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
     };
-    if(currentDocId){
-      await db.collection('inspections').doc(currentDocId).update(data);
-    } else {
-      data.createdAt=firebase.firestore.FieldValue.serverTimestamp();
-      const ref=await db.collection('inspections').add(data);
-      currentDocId=ref.id;
-    }
-    hideSaving();
-    toast(status==='completed'?'Inspection saved & completed!':'Draft saved!','success');
-    backToDash();
-  } catch(e){ hideSaving(); toast('Save failed: '+e.message,'error'); }
+    if(currentDocId){ await db.collection('inspections').doc(currentDocId).update(data); }
+    else{ data.createdAt=firebase.firestore.FieldValue.serverTimestamp(); const ref=await db.collection('inspections').add(data); currentDocId=ref.id; }
+    hideSaving(); toast(status==='completed'?'Inspection saved & completed!':'Draft saved!','success'); backToDash();
+  }catch(e){ hideSaving(); toast('Save failed: '+e.message,'error'); }
 }
 
-// ╔═══════════════════════════════════╗
-// ║         UI HELPERS                ║
-// ╚═══════════════════════════════════╝
-function showSaving(msg){
-  document.getElementById('savingText').textContent=msg||'Saving...';
-  document.getElementById('savingOverlay').style.display='flex';
-}
+// ═══════ HELPERS ═══════
+function showSaving(m){ document.getElementById('savingText').textContent=m||'Saving...'; document.getElementById('savingOverlay').style.display='flex'; }
 function hideSaving(){ document.getElementById('savingOverlay').style.display='none'; }
-function toast(msg,type){
-  const el=document.createElement('div');
-  el.className='toast toast-'+(type||'success');
-  el.textContent=msg;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),3000);
-}
+function toast(m,t){ const el=document.createElement('div'); el.className='toast toast-'+(t||'success'); el.textContent=m; document.body.appendChild(el); setTimeout(()=>el.remove(),3000); }
+function esc(s){ return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function v(id){ const el=document.getElementById(id); return el?el.value:''; }
 
-// ╔═══════════════════════════════════╗
-// ║       INSPECTION TYPE             ║
-// ╚═══════════════════════════════════╝
+// ═══════ TYPE ═══════
 function selectType(type){
   inspectionType=type;
   document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
@@ -581,9 +484,7 @@ function selectType(type){
   document.getElementById('typeNextBtn').disabled=false;
 }
 
-// ╔═══════════════════════════════════╗
-// ║        NAVIGATION                 ║
-// ╚═══════════════════════════════════╝
+// ═══════ NAVIGATION ═══════
 let currentStep=0;
 function goStep(n){
   if(n>0&&!inspectionType) return;
@@ -591,26 +492,22 @@ function goStep(n){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));
   document.getElementById('tabBar').style.display='';
   document.getElementById('step'+n).classList.add('active');
-  currentStep=n;
-  if(n===2) renderBldgTabs();
+  currentStep=n; if(n===2) renderBldgTabs();
 }
-function showPreview(){
-  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
-  document.getElementById('tabBar').style.display='none';
-  document.getElementById('stepPreview').classList.add('active');
-  renderPreview();
-}
+function showPreview(){ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active')); document.getElementById('tabBar').style.display='none'; document.getElementById('stepPreview').classList.add('active'); renderPreview(); }
 function hidePreview(){ document.getElementById('tabBar').style.display=''; goStep(3); }
 
-// ╔═══════════════════════════════════╗
-// ║          BUILDINGS                ║
-// ╚═══════════════════════════════════╝
+// ═══════ BUILDINGS ═══════
 function renderBldgTabs(){
   const ct=document.getElementById('bldgTabs'); ct.innerHTML='';
   buildings.forEach((b,i)=>{
     const btn=document.createElement('button');
     btn.className='bldg-tab'+(i===activeBldg?' active':'');
-    btn.innerHTML=`<span class="dot" style="background:${P[b.priority].color}"></span>${b.name||'Bldg '+(i+1)}`;
+    if(isRepair()){
+      btn.textContent=b.name||'Bldg '+(i+1);
+    } else {
+      btn.innerHTML=`<span class="dot" style="background:${P[b.priority].color}"></span>${b.name||'Bldg '+(i+1)}`;
+    }
     btn.onclick=()=>{ activeBldg=i; renderBldgTabs(); renderBldgForm(); };
     ct.appendChild(btn);
   });
@@ -623,65 +520,140 @@ function renderBldgTabs(){
 
 function renderBldgForm(){
   const b=buildings[activeBldg];
-  document.getElementById('bldgForm').innerHTML=`
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="margin:0">Building ${activeBldg+1} of ${buildings.length}</h3>
-      <div class="bldg-move">
-        <button onclick="moveBldg(-1)" ${activeBldg===0?'disabled style="opacity:.3"':''}>↑</button>
-        <button onclick="moveBldg(1)" ${activeBldg===buildings.length-1?'disabled style="opacity:.3"':''}>↓</button>
+  const form=document.getElementById('bldgForm');
+
+  if(isRepair()){
+    // ── REPAIR FORM ──
+    form.innerHTML=`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0">Building ${activeBldg+1} of ${buildings.length}</h3>
+        <div class="bldg-move">
+          <button onclick="moveBldg(-1)" ${activeBldg===0?'disabled style="opacity:.3"':''}>↑</button>
+          <button onclick="moveBldg(1)" ${activeBldg===buildings.length-1?'disabled style="opacity:.3"':''}>↓</button>
+        </div>
       </div>
-    </div>
-    <div class="field"><label class="lbl">Building Name / ID</label>
-      <input id="bName" value="${esc(b.name)}" placeholder="e.g. Building 100" oninput="buildings[activeBldg].name=this.value;renderBldgTabs()">
-    </div>
-    <div class="field"><label class="lbl">Priority</label>
-      <div class="priority-grid">${Object.entries(P).map(([k,v])=>`
-        <button class="p-btn" onclick="setPriority('${k}')"
-          style="color:${v.color};border-color:${b.priority===k?v.color:'#D0D5DD'};background:${b.priority===k?v.bg:'white'}">
-          ${v.label}
-        </button>`).join('')}
+      <div class="field"><label class="lbl">Building Name / ID</label>
+        <input id="bName" value="${esc(b.name)}" placeholder="e.g. Building 100" oninput="buildings[activeBldg].name=this.value;renderBldgTabs()">
       </div>
-    </div>
-    <div class="field"><label class="lbl">Findings</label>
-      <div>${b.findings.map((f,i)=>`
-        <div class="finding-row">
-          <span style="color:#98A2B3;font-weight:700">•</span>
-          <input value="${esc(f)}" placeholder="e.g. 20 broken tiles" oninput="buildings[activeBldg].findings[${i}]=this.value">
-          ${b.findings.length>1?`<button class="remove-f" onclick="removeFinding(${i})">×</button>`:''}
-        </div>`).join('')}
+
+      <div class="field">
+        <label class="lbl">Repairs Needed</label>
+        <div id="repairsWrap">${b.repairs.map((r,i)=>`
+          <div class="finding-row">
+            <span style="color:#E65100;font-weight:700">${i+1}.</span>
+            <input value="${esc(r)}" placeholder="e.g. 5 cracked tiles on south slope" oninput="buildings[activeBldg].repairs[${i}]=this.value">
+            ${b.repairs.length>1?`<button class="remove-f" onclick="removeRepair(${i})">×</button>`:''}
+          </div>`).join('')}
+        </div>
+        <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addRepair()">+ Add Repair</button>
       </div>
-      <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addFinding()">+ Add Finding</button>
+
+      <div class="field">
+        <label class="lbl">Recommended Actions (${b.actions.length})</label>
+        <div id="actionsWrap">${b.actions.map((a,ai)=>renderActionCard(a,ai)).join('')}</div>
+        <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addAction()">+ Add Recommended Action</button>
+      </div>
+
+      ${buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Building</button>`:''}
+    </div>`;
+  } else {
+    // ── REPLACEMENT / DUE DILIGENCE FORM ──
+    form.innerHTML=`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0">Building ${activeBldg+1} of ${buildings.length}</h3>
+        <div class="bldg-move">
+          <button onclick="moveBldg(-1)" ${activeBldg===0?'disabled style="opacity:.3"':''}>↑</button>
+          <button onclick="moveBldg(1)" ${activeBldg===buildings.length-1?'disabled style="opacity:.3"':''}>↓</button>
+        </div>
+      </div>
+      <div class="field"><label class="lbl">Building Name / ID</label>
+        <input id="bName" value="${esc(b.name)}" placeholder="e.g. Building 100" oninput="buildings[activeBldg].name=this.value;renderBldgTabs()">
+      </div>
+      <div class="field"><label class="lbl">Priority</label>
+        <div class="priority-grid">${Object.entries(P).map(([k,pv])=>`
+          <button class="p-btn" onclick="setPriority('${k}')"
+            style="color:${pv.color};border-color:${b.priority===k?pv.color:'#D0D5DD'};background:${b.priority===k?pv.bg:'white'}">
+            ${pv.label}
+          </button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label class="lbl">Findings</label>
+        <div>${b.findings.map((f,i)=>`
+          <div class="finding-row">
+            <span style="color:#98A2B3;font-weight:700">•</span>
+            <input value="${esc(f)}" placeholder="e.g. 20 broken tiles" oninput="buildings[activeBldg].findings[${i}]=this.value">
+            ${b.findings.length>1?`<button class="remove-f" onclick="removeFinding(${i})">×</button>`:''}
+          </div>`).join('')}
+        </div>
+        <button class="btn btn-outline" style="width:auto;padding:10px;font-size:14px;margin-top:4px" onclick="addFinding()">+ Add Finding</button>
+      </div>
+      <div class="field"><label class="lbl">Recommended Action</label>
+        <textarea id="bAction" placeholder="e.g. Full roof replacement recommended..." oninput="buildings[activeBldg].action=this.value">${esc(b.action)}</textarea>
+      </div>
+      <div class="field"><label class="lbl">Photos (${b.photos.length})</label>
+        <div class="photo-grid">${b.photos.map((p,i)=>`
+          <div class="photo-cell">
+            <img src="${p.url||p.data}" alt="">
+            <input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].photos[${i}].caption=this.value">
+            <button class="del-photo" onclick="removePhoto(${i})">×</button>
+          </div>`).join('')}
+        </div>
+        <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
+        <button class="btn btn-outline" style="padding:12px;font-size:14px" onclick="document.getElementById('photoInput').click()">📷 Add Photos</button>
+      </div>
+      ${buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Building</button>`:''}
+    </div>`;
+  }
+}
+
+// ── Render a single repair action card ──
+function renderActionCard(a, ai){
+  return `
+  <div class="action-card">
+    <div class="action-card-header">
+      <h4>Action ${ai+1}</h4>
+      ${buildings[activeBldg].actions.length>1?`<button onclick="removeAction(${ai})">Remove</button>`:''}
     </div>
-    <div class="field"><label class="lbl">Recommended Action</label>
-      <textarea id="bAction" placeholder="e.g. Full roof replacement recommended..." oninput="buildings[activeBldg].action=this.value">${esc(b.action)}</textarea>
+    <div class="field" style="margin-bottom:10px">
+      <textarea placeholder="e.g. Replace 5 cracked tiles on south slope with matching material..." oninput="buildings[activeBldg].actions[${ai}].description=this.value" style="min-height:60px">${esc(a.description)}</textarea>
     </div>
-    <div class="field"><label class="lbl">Photos (${b.photos.length})</label>
-      <div class="photo-grid">${b.photos.map((p,i)=>`
+    <div class="field" style="margin-bottom:0">
+      <label class="lbl" style="font-size:12px">Photos (${a.photos.length})</label>
+      <div class="photo-grid">${a.photos.map((p,pi)=>`
         <div class="photo-cell">
           <img src="${p.url||p.data}" alt="">
-          <input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].photos[${i}].caption=this.value">
-          <button class="del-photo" onclick="removePhoto(${i})">×</button>
+          <input value="${esc(p.caption)}" placeholder="Caption..." oninput="buildings[activeBldg].actions[${ai}].photos[${pi}].caption=this.value">
+          <button class="del-photo" onclick="removeActionPhoto(${ai},${pi})">×</button>
         </div>`).join('')}
       </div>
-      <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
-      <button class="btn btn-outline" style="padding:12px;font-size:14px" onclick="document.getElementById('photoInput').click()">📷 Add Photos</button>
+      <input type="file" id="actionPhotoInput${ai}" accept="image/*" multiple style="display:none" onchange="addActionPhotos(${ai},this)">
+      <button class="btn btn-outline" style="padding:8px 12px;font-size:13px" onclick="document.getElementById('actionPhotoInput${ai}').click()">📷 Add Photos</button>
     </div>
-    ${buildings.length>1?`<button class="btn btn-red" onclick="removeBldg()">Remove This Building</button>`:''}
   </div>`;
 }
 
-function esc(s){ return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+// ── Repair-specific functions ──
+function addRepair(){ buildings[activeBldg].repairs.push(''); renderBldgForm(); }
+function removeRepair(i){ buildings[activeBldg].repairs.splice(i,1); renderBldgForm(); }
+function addAction(){ buildings[activeBldg].actions.push({description:'',photos:[]}); renderBldgForm(); }
+function removeAction(i){ buildings[activeBldg].actions.splice(i,1); renderBldgForm(); }
+function addActionPhotos(ai,input){
+  const files=Array.from(input.files); let loaded=0;
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{ buildings[activeBldg].actions[ai].photos.push({data:e.target.result,caption:'',url:''}); loaded++;
+      if(loaded===files.length) renderBldgForm(); };
+    r.readAsDataURL(file);
+  }); input.value='';
+}
+function removeActionPhoto(ai,pi){ buildings[activeBldg].actions[ai].photos.splice(pi,1); renderBldgForm(); }
+
+// ── Replacement/DD functions ──
 function setPriority(p){ buildings[activeBldg].priority=p; renderBldgTabs(); renderBldgForm(); }
 function addFinding(){ buildings[activeBldg].findings.push(''); renderBldgForm(); }
 function removeFinding(i){ buildings[activeBldg].findings.splice(i,1); renderBldgForm(); }
-function removeBldg(){ buildings.splice(activeBldg,1); activeBldg=Math.max(0,activeBldg-1); renderBldgTabs(); }
-function moveBldg(dir){
-  const ni=activeBldg+dir;
-  if(ni<0||ni>=buildings.length) return;
-  [buildings[activeBldg],buildings[ni]]=[buildings[ni],buildings[activeBldg]];
-  activeBldg=ni; renderBldgTabs();
-}
 function addPhotos(input){
   const files=Array.from(input.files); let loaded=0;
   files.forEach(file=>{
@@ -689,18 +661,19 @@ function addPhotos(input){
     r.onload=e=>{ buildings[activeBldg].photos.push({data:e.target.result,caption:'',url:''}); loaded++;
       if(loaded===files.length) renderBldgForm(); };
     r.readAsDataURL(file);
-  });
-  input.value='';
+  }); input.value='';
 }
 function removePhoto(i){ buildings[activeBldg].photos.splice(i,1); renderBldgForm(); }
+function removeBldg(){ buildings.splice(activeBldg,1); activeBldg=Math.max(0,activeBldg-1); renderBldgTabs(); }
+function moveBldg(dir){ const ni=activeBldg+dir; if(ni<0||ni>=buildings.length) return; [buildings[activeBldg],buildings[ni]]=[buildings[ni],buildings[activeBldg]]; activeBldg=ni; renderBldgTabs(); }
 
-// ╔═══════════════════════════════════╗
-// ║          PREVIEW                  ║
-// ╚═══════════════════════════════════╝
+// ═══════ PREVIEW ═══════
 function renderPreview(){
   const d=collectData();
-  const totalPhotos=buildings.reduce((s,b)=>s+b.photos.length,0);
   const t=TYPES[inspectionType]||{label:'—',color:'#667085',bg:'#F2F4F7'};
+  let totalPhotos=0;
+  buildings.forEach(b=>{ totalPhotos+=b.photos.length; b.actions.forEach(a=>totalPhotos+=a.photos.length); });
+
   document.getElementById('previewMeta').innerHTML=`
     <div style="margin-bottom:12px"><span class="type-badge" style="background:${t.bg};color:${t.color}">${t.label}</span></div>
     <h3 style="color:#1B2A4A;font-size:20px;margin-bottom:4px">${d.propertyName||'Untitled Property'}</h3>
@@ -711,31 +684,37 @@ function renderPreview(){
       <div class="lk">Report #</div><div class="vl">${d.reportNumber||'—'}</div>
       <div class="lk">Roof Type</div><div class="vl">${d.roofType}</div>
     </div>`;
-  document.getElementById('previewRanking').innerHTML=`
-    <h4 style="color:#1B2A4A;margin-bottom:12px">Priority Ranking</h4>`+
-    buildings.map((b,i)=>`
-      <div class="rank-row">
-        <span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span>
-        <span class="badge" style="background:${P[b.priority].bg};color:${P[b.priority].color}">${b.priority}</span>
-        <span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span>
-        <span style="color:#98A2B3;font-size:12px">${b.findings.filter(Boolean).length} findings · ${b.photos.length} photos</span>
-      </div>`).join('');
+
+  if(isRepair()){
+    document.getElementById('previewRanking').innerHTML=`
+      <h4 style="color:#1B2A4A;margin-bottom:12px">Building Summary</h4>`+
+      buildings.map((b,i)=>{
+        const rc=b.repairs.filter(Boolean).length, ac=b.actions.filter(a=>a.description).length;
+        const aPhotos=b.actions.reduce((s,a)=>s+a.photos.length,0);
+        return `<div class="rank-row">
+          <span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span>
+          <span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span>
+          <span style="color:#98A2B3;font-size:12px">${rc} repair${rc!==1?'s':''} · ${ac} action${ac!==1?'s':''} · ${aPhotos} photos</span>
+        </div>`;
+      }).join('');
+  } else {
+    document.getElementById('previewRanking').innerHTML=`
+      <h4 style="color:#1B2A4A;margin-bottom:12px">Priority Ranking</h4>`+
+      buildings.map((b,i)=>`
+        <div class="rank-row">
+          <span style="color:#98A2B3;font-weight:600;font-size:13px;width:24px">${i+1}</span>
+          <span class="badge" style="background:${P[b.priority].bg};color:${P[b.priority].color}">${b.priority}</span>
+          <span style="flex:1;font-weight:500;font-size:14px">${b.name||'Building '+(i+1)}</span>
+          <span style="color:#98A2B3;font-size:12px">${b.findings.filter(Boolean).length} findings · ${b.photos.length} photos</span>
+        </div>`).join('');
+  }
 }
 
 function collectData(){
-  return {
-    inspectionType, propertyName:v('propertyName'), propertyAddress:v('propertyAddress'),
-    market:v('market'), totalBuildings:v('totalBuildings'), roofType:v('roofType'),
-    inspectionDate:v('inspectionDate'), inspectorName:v('inspectorName'),
-    reportNumber:v('reportNumber'), weatherConditions:v('weatherConditions'),
-    underlaymentNotes:v('underlaymentNotes'), tileInfo:v('tileInfo'), generalNotes:v('generalNotes'),
-  };
+  return { inspectionType, propertyName:v('propertyName'), propertyAddress:v('propertyAddress'), market:v('market'), totalBuildings:v('totalBuildings'), roofType:v('roofType'), inspectionDate:v('inspectionDate'), inspectorName:v('inspectorName'), reportNumber:v('reportNumber'), weatherConditions:v('weatherConditions'), underlaymentNotes:v('underlaymentNotes'), tileInfo:v('tileInfo'), generalNotes:v('generalNotes') };
 }
-function v(id){ const el=document.getElementById(id); return el?el.value:''; }
 
-// ╔═══════════════════════════════════╗
-// ║       REPORT GENERATION           ║
-// ╚═══════════════════════════════════╝
+// ═══════ REPORT ═══════
 function showReport(){
   const d=collectData();
   const Pc={P1:{text:"#C62828",bg:"#FFEBEE"},P2:{text:"#E65100",bg:"#FFF3E0"},P3:{text:"#b38600",bg:"#FFFDE7"},P4:{text:"#2E7D32",bg:"#E8F5E9"}};
@@ -743,40 +722,90 @@ function showReport(){
   const t=TYPES[inspectionType]||{label:'—',color:'#667085',bg:'#F2F4F7'};
   const typeBadge=`<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:${t.bg};color:${t.color}">${t.label}</span>`;
 
-  const rows=buildings.map((b,i)=>`
-    <tr style="background:${i%2===0?'#f9fafb':'#fff'}">
-      <td style="padding:6px 8px;color:#667085">${i+1}</td>
-      <td style="padding:6px 8px">${badge(b.priority)}</td>
-      <td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td>
-      <td style="padding:6px 8px;color:#667085;text-align:center">${b.findings.filter(Boolean).length}</td>
-      <td style="padding:6px 8px;color:#667085;text-align:center">${b.photos.length}</td>
-    </tr>`).join('');
+  let summaryTable='', detailsHtml='';
 
-  const details=buildings.map((b,i)=>{
-    const fi=b.findings.filter(Boolean);
-    return `
-    <div style="margin-bottom:24px;page-break-inside:avoid">
-      <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span>
-        ${badge(b.priority)}
-      </div>
-      <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
-        ${fi.length?`<p style="font-weight:600;color:#475467;margin:0 0 4px">Findings</p><ul style="margin:0 0 10px;padding-left:20px">${fi.map(f=>`<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`:''}
-        ${b.action?`<p style="font-weight:600;color:#475467;margin:10px 0 4px">Recommended Action</p><p style="margin:0 0 10px;padding-left:8px">${b.action}</p>`:''}
-        ${b.photos.length?`<p style="font-weight:600;color:#475467;margin:10px 0 8px">Photos (${b.photos.length})</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            ${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:160px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}
-          </div>`:''}
-      </div>
-    </div>`;
-  }).join('');
+  if(isRepair()){
+    // Repair summary
+    summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <thead><tr style="background:#f8f9fa">
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th>
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Repairs</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Actions</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th>
+      </tr></thead><tbody>${buildings.map((b,i)=>{
+        const rc=b.repairs.filter(Boolean).length, ac=b.actions.filter(a=>a.description).length;
+        const aph=b.actions.reduce((s,a)=>s+a.photos.length,0);
+        return `<tr style="background:${i%2===0?'#f9fafb':'#fff'}">
+          <td style="padding:6px 8px;color:#667085">${i+1}</td>
+          <td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td>
+          <td style="padding:6px 8px;color:#667085;text-align:center">${rc}</td>
+          <td style="padding:6px 8px;color:#667085;text-align:center">${ac}</td>
+          <td style="padding:6px 8px;color:#667085;text-align:center">${aph}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+
+    // Repair details
+    detailsHtml=buildings.map((b,i)=>{
+      const reps=b.repairs.filter(Boolean);
+      const acts=b.actions.filter(a=>a.description||a.photos.length);
+      return `<div style="margin-bottom:24px;page-break-inside:avoid">
+        <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0">
+          <span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span>
+        </div>
+        <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
+          ${reps.length?`<p style="font-weight:600;color:#475467;margin:0 0 4px">Repairs Needed</p><ol style="margin:0 0 14px;padding-left:20px">${reps.map(r=>`<li style="margin-bottom:3px">${r}</li>`).join('')}</ol>`:''}
+          ${acts.length?acts.map((a,ai)=>`
+            <div style="background:#f8f9fa;border:1px solid #eaecf0;border-radius:6px;padding:10px;margin-bottom:10px">
+              <p style="font-weight:700;color:#1B2A4A;font-size:12px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.3px">Recommended Action ${ai+1}</p>
+              <p style="margin:0 0 8px;font-size:13px">${a.description}</p>
+              ${a.photos.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                ${a.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:140px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}
+              </div>`:''}
+            </div>`).join(''):''}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    // Replacement / DD summary
+    summaryTable=`<table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <thead><tr style="background:#f8f9fa">
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th>
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Priority</th>
+        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Findings</th>
+        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th>
+      </tr></thead><tbody>${buildings.map((b,i)=>`
+        <tr style="background:${i%2===0?'#f9fafb':'#fff'}">
+          <td style="padding:6px 8px;color:#667085">${i+1}</td>
+          <td style="padding:6px 8px">${badge(b.priority)}</td>
+          <td style="padding:6px 8px;font-weight:500">${b.name||'Building '+(i+1)}</td>
+          <td style="padding:6px 8px;color:#667085;text-align:center">${b.findings.filter(Boolean).length}</td>
+          <td style="padding:6px 8px;color:#667085;text-align:center">${b.photos.length}</td>
+        </tr>`).join('')}</tbody></table>`;
+
+    // Replacement / DD details
+    detailsHtml=buildings.map((b,i)=>{
+      const fi=b.findings.filter(Boolean);
+      return `<div style="margin-bottom:24px;page-break-inside:avoid">
+        <div style="background:#1B2A4A;color:white;padding:8px 12px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;font-size:13px">${b.name||'Building '+(i+1)}</span>
+          ${badge(b.priority)}
+        </div>
+        <div style="border:1px solid #eaecf0;border-top:none;border-radius:0 0 6px 6px;padding:12px">
+          ${fi.length?`<p style="font-weight:600;color:#475467;margin:0 0 4px">Findings</p><ul style="margin:0 0 10px;padding-left:20px">${fi.map(f=>`<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`:''}
+          ${b.action?`<p style="font-weight:600;color:#475467;margin:10px 0 4px">Recommended Action</p><p style="margin:0 0 10px;padding-left:8px">${b.action}</p>`:''}
+          ${b.photos.length?`<p style="font-weight:600;color:#475467;margin:10px 0 8px">Photos (${b.photos.length})</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              ${b.photos.map(ph=>`<div><img src="${ph.url||ph.data}" style="width:100%;height:160px;object-fit:cover;border-radius:4px;border:1px solid #eee"/>${ph.caption?`<p style="font-size:10px;color:#667085;margin:3px 0 0;text-align:center">${ph.caption}</p>`:''}</div>`).join('')}
+            </div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   const notes=[['UNDERLAYMENT NOTES',d.underlaymentNotes],['TILE / MATERIAL ID',d.tileInfo],['GENERAL NOTES',d.generalNotes]]
-    .filter(([,val])=>val).map(([t,val])=>`
-    <div style="margin-bottom:16px">
-      <p style="background:#f8f9fa;padding:7px 10px;font-weight:700;font-size:11px;color:#1B2A4A;margin:0 0 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px">${t}</p>
-      <p style="margin:0 0 0 8px;font-size:12px">${val}</p>
-    </div>`).join('');
+    .filter(([,val])=>val).map(([t,val])=>`<div style="margin-bottom:16px"><p style="background:#f8f9fa;padding:7px 10px;font-weight:700;font-size:11px;color:#1B2A4A;margin:0 0 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px">${t}</p><p style="margin:0 0 0 8px;font-size:12px">${val}</p></div>`).join('');
 
   document.getElementById('reportBody').innerHTML=`
     <div style="background:#1B2A4A;color:white;padding:14px 20px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -790,19 +819,10 @@ function showReport(){
     </div>
     <p style="color:#667085;font-size:11px;margin-bottom:12px">${[d.propertyAddress,d.market,d.roofType,buildings.length+' Buildings',d.weatherConditions?'Weather: '+d.weatherConditions:''].filter(Boolean).join(' · ')}</p>
     <hr style="border:none;border-top:1px solid #eaecf0;margin-bottom:16px">
-    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Priority Summary</p>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-      <thead><tr style="background:#f8f9fa">
-        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">#</th>
-        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Priority</th>
-        <th style="padding:6px 8px;text-align:left;color:#475467;font-size:11px">Building</th>
-        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Findings</th>
-        <th style="padding:6px 8px;text-align:center;color:#475467;font-size:11px">Photos</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${isRepair()?'Repair Summary':'Priority Summary'}</p>
+    ${summaryTable}
     <p style="font-weight:700;font-size:11px;color:#1B2A4A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Building Details</p>
-    ${details}${notes}`;
+    ${detailsHtml}${notes}`;
   document.getElementById('reportOverlay').style.display='block';
   document.getElementById('reportOverlay').scrollTop=0;
 }
